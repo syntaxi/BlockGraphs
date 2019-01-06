@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.blockGraph;
+package org.terasology.blockGraph.dataMovement;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
-import org.terasology.blockGraph.baseClasses.GraphNode;
+import org.terasology.blockGraph.graphDefinitions.nodes.GraphNode;
 import org.terasology.engine.Time;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.entitySystem.systems.BaseComponentSystem;

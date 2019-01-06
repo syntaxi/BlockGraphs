@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.blockGraph;
+package org.terasology.blockGraph.dataMovement;
 
 
-import org.terasology.blockGraph.baseClasses.GraphNode;
+import org.terasology.blockGraph.graphDefinitions.nodes.GraphNode;
 import org.terasology.entitySystem.Component;
 import org.terasology.math.Side;
 

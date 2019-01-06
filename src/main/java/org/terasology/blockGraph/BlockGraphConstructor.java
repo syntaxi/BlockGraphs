@@ -17,8 +17,10 @@ package org.terasology.blockGraph;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.terasology.blockGraph.baseClasses.BlockGraph;
-import org.terasology.blockGraph.baseClasses.GraphNode;
+import org.terasology.blockGraph.graphDefinitions.BlockGraph;
+import org.terasology.blockGraph.graphDefinitions.nodes.GraphNode;
+import org.terasology.blockGraph.graphDefinitions.GraphType;
+import org.terasology.blockGraph.graphDefinitions.GraphUri;
 import org.terasology.entitySystem.systems.BaseComponentSystem;
 import org.terasology.entitySystem.systems.RegisterSystem;
 import org.terasology.math.geom.Vector3f;

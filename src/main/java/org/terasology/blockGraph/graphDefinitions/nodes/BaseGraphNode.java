@@ -13,23 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.blockGraph.baseClasses;
+package org.terasology.blockGraph.graphDefinitions.nodes;
 
-import org.terasology.blockGraph.EdgeMovementOptions;
+import org.terasology.blockGraph.dataMovement.EdgeMovementOptions;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
+import org.terasology.utilities.random.FastRandom;
 import org.terasology.world.block.BlockUri;
 
+import java.util.ArrayList;
+
 /**
- * Blank implementation of GraphNode
- * Is a singleton to avoid creating an unnecessary amount of blank instances
+ * The most basic implementation of a node.
+ * Simply randomly routes data in junctions and straight through otherwise
  */
-public final class BlankNode extends GraphNode {
-    public static final BlankNode BLANK_NODE = new BlankNode();
-
-    private BlankNode() {
-
-    }
+public class BaseGraphNode extends GraphNode {
 
     @Override
     public BlockUri getBlockForNode() {
@@ -38,26 +36,29 @@ public final class BlankNode extends GraphNode {
 
     @Override
     public void dataEnterNode(EntityRef data, Side entry) {
-
+        // Do nothing
     }
 
     @Override
     public Side dataEnterNetwork(EntityRef data) {
-        return null;
+        return processJunction(data, null);
     }
 
     @Override
     public Side processJunction(EntityRef data, Side entry) {
-        return null;
+        /* Return a random side out of the available options */
+        return new FastRandom().nextItem(new ArrayList<>(getConnectingNodes().keySet()));
     }
 
     @Override
     public EdgeMovementOptions processEdge(EntityRef data, Side entry) {
-        return null;
+        /* Choose opposite option */
+        return EdgeMovementOptions.OTHER;
     }
 
     @Override
     public boolean processTerminus(EntityRef data) {
-        return false;
+        /* Always pop the data out */
+        return true;
     }
 }

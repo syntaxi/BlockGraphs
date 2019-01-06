@@ -16,7 +16,9 @@
 package org.terasology.blockGraph;
 
 
-import org.terasology.blockGraph.baseClasses.BlockGraph;
+import org.terasology.blockGraph.graphDefinitions.BlockGraph;
+import org.terasology.blockGraph.graphDefinitions.GraphType;
+import org.terasology.blockGraph.graphDefinitions.GraphUri;
 import org.terasology.engine.SimpleUri;
 import org.terasology.world.block.BlockUri;
 

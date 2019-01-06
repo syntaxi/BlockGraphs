@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.blockGraph.baseClasses;
+package org.terasology.blockGraph.graphDefinitions.nodes;
 
-import org.terasology.blockGraph.EdgeMovementOptions;
+import org.terasology.blockGraph.dataMovement.EdgeMovementOptions;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;

@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.blockGraph.baseClasses;
+package org.terasology.blockGraph.graphDefinitions;
 
-import org.terasology.blockGraph.GraphType;
-import org.terasology.blockGraph.GraphUri;
+import org.terasology.blockGraph.graphDefinitions.nodes.BlankNode;
+import org.terasology.blockGraph.graphDefinitions.nodes.GraphNode;
 import org.terasology.world.block.BlockUri;
 
 import java.util.ArrayList;
