@@ -1,0 +1,79 @@
+/*
+ * Copyright 2018 MovingBlocks
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.terasology.blockGraph;
+
+
+import org.terasology.blockGraph.baseClasses.BlockGraph;
+import org.terasology.engine.SimpleUri;
+import org.terasology.world.block.BlockUri;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+public class BlockGraphManager {
+    private long nextGraphId = 1L;
+
+    private Map<SimpleUri, GraphType> graphTypes = new HashMap<>();
+    private Map<GraphUri, BlockGraph> graphRegistry = new HashMap<>();
+    private Map<BlockUri, SimpleUri> blockToGraph = new HashMap<>();
+
+    /**
+     * Gets the graph type associated with the specific URI
+     *
+     * @param typeUri The URI for that graph type.
+     * @return The graph type, if it exists
+     */
+    public Optional<GraphType> getGraphType(SimpleUri typeUri) {
+        return Optional.ofNullable(graphTypes.getOrDefault(typeUri, null));
+    }
+
+    /**
+     * Gets the graph type, from a block that is listed in that graph type.
+     *
+     * @param blockInGraph The URI of the block to check
+     * @return The graph type if it could be found
+     */
+    public Optional<GraphType> getGraphType(BlockUri blockInGraph) {
+        return getGraphType(blockToGraph.getOrDefault(blockInGraph, new SimpleUri()));
+    }
+
+    /**
+     * Create and store a new graph instance using the specified type.
+     *
+     * @param graphType The graph type to use
+     * @return The newly created graph
+     */
+    public BlockGraph newGraphInstance(GraphType graphType) {
+        GraphUri uri = new GraphUri(graphType.getUri(), nextGraphId);
+        nextGraphId++;
+        BlockGraph newGraph = new BlockGraph(graphType, uri);
+        graphRegistry.put(uri, newGraph);
+
+        return newGraph;
+    }
+
+    /**
+     * Get the graph instance for a given {@link GraphUri}
+     * Will error if given a URI that there is no graph for
+     *
+     * @param graphUri The URI of the graph to retrieve
+     * @return The Block Graph instance
+     */
+    public BlockGraph getGraphInstance(GraphUri graphUri) {
+        return graphRegistry.get(graphUri);
+    }
+}
