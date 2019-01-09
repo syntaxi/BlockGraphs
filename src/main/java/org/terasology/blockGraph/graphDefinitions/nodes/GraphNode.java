@@ -16,6 +16,8 @@
 package org.terasology.blockGraph.graphDefinitions.nodes;
 
 import org.terasology.blockGraph.dataMovement.EdgeMovementOptions;
+import org.terasology.blockGraph.graphDefinitions.BlockGraph;
+import org.terasology.blockGraph.graphDefinitions.GraphUri;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;
@@ -37,7 +39,23 @@ public abstract class GraphNode {
     private Map<Side, GraphNode> nodes = new HashMap<>(6);
     private Vector3i worldPos;
 
+    /**
+     * The id of this node in it's {@link BlockGraph} instance
+     */
+    private int nodeId;
+
+    /**
+     * The URI of the graph this node belongs to
+     */
+    private GraphUri graphUri;
+
+    /**
+     * The position of the 'front' of the edge
+     */
     private Vector3i frontPos;
+    /**
+     * The position of the 'back' of the edge
+     */
     private Vector3i backPos;
 
     /**
@@ -131,20 +149,30 @@ public abstract class GraphNode {
         return nodes.size() == 2;
     }
 
+    /**
+     * @return True if the node is no longer an edge, and this hasn't been updated
+     */
+    public boolean wasEdge() {
+        return frontPos != null || backPos != null;
+    }
+
+    /**
+     * Clears the remnants of being an edge
+     */
+    public void clearEdge() {
+        frontPos = null;
+        backPos = null;
+    }
+
     public boolean isTerminus() {
         return nodes.size() == 1;
     }
 
-    /**
-     * @return The position being used as the front of the edge
-     */
+
     public Vector3i getFrontPos() {
         return frontPos;
     }
 
-    /**
-     * @return The position being used as the back of the edge
-     */
     public Vector3i getBackPos() {
         return backPos;
     }
@@ -155,5 +183,39 @@ public abstract class GraphNode {
 
     public void setWorldPos(Vector3i worldPos) {
         this.worldPos = worldPos;
+    }
+
+    public int getNodeId() {
+        return nodeId;
+    }
+
+    public void setNodeId(int nodeId) {
+        this.nodeId = nodeId;
+    }
+
+    public GraphUri getGraphUri() {
+        return graphUri;
+    }
+
+    public void setGraphUri(GraphUri graphUri) {
+        this.graphUri = graphUri;
+    }
+
+    /**
+     * Links this node with another.
+     * Duplicates the link both ways.
+     * This does not respect any existing connection via that side
+     *
+     * @param otherNode The other node to link to
+     */
+    public void linkNode(GraphNode otherNode) {
+        /* Yes this is ugly, but it's better than making a bunch of new vectors */
+        Side nodeSide = Side.inDirection(
+                otherNode.worldPos.x - worldPos.x,
+                otherNode.worldPos.y - worldPos.y,
+                otherNode.worldPos.z - worldPos.z);
+
+        nodes.put(nodeSide, otherNode);
+        otherNode.nodes.put(nodeSide.reverse(), this);
     }
 }
