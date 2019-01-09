@@ -35,6 +35,7 @@ import org.terasology.world.WorldProvider;
 import org.terasology.world.block.Block;
 import org.terasology.world.block.BlockManager;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -82,7 +83,7 @@ public class BlockGraphConstructor extends BaseComponentSystem {
      * Adds the block at the given point to the graph
      *
      * @param position    The position of the block to add
-     * @param targetGraph The graph toa dd the block too
+     * @param targetGraph The graph to add the block too
      * @return The node at the given position.
      */
     private GraphNode addPointToGraph(Vector3f position, BlockGraph targetGraph) {
@@ -122,22 +123,74 @@ public class BlockGraphConstructor extends BaseComponentSystem {
     }
 
     /**
+     * Handles converting a node from an edge into an edge and a junction (or similar)
+     *
+     * @param oldEdge The old node that is now being updated
+     */
+    private void handleDeEdging(GraphNode oldEdge) {
+        oldEdge.getConnectingNodes().clear();
+        Vector3i currentPos = oldEdge.getFrontPos();
+        Vector3i edgeBack = oldEdge.getBackPos();
+        BlockGraph graph = graphManager.getGraphInstance(oldEdge.getGraphUri());
+        graph.removeNode(oldEdge);
+
+        GraphNode currentNode = graph.createNode(worldProvider.getBlock(currentPos).getURI());
+
+        while (currentPos != edgeBack) {
+            Map<Side, Integer> nodeMap = getNeighbouringNodes(currentPos, graph.getUri());
+            if (nodeMap.size() == 2 || nodeMap.size() == 1) {
+
+            } else {
+
+            }
+        }
+
+
+        Vectori3i currentPos
+        if (nodeMap.size() == 2) {
+            currentNode.setEdgePos(edgeFront, );
+        } else {
+
+        }
+    }
+
+    /**
+     * Gets the id's of any neighbouring nodes to this one.
+     * Nodes are only counted if they are a part of the same graph
+     * <p>
+     * Also note that each block in an edge node will count.
+     * This means that the result might return the same node for multiple sides if that is the case
+     *
+     * @param nodePos  The position to scan around
+     * @param graphUri The URI of the graph to check against.
+     * @return A mapping between the side and the node's ID
+     */
+    private Map<Side, Integer> getNeighbouringNodes(Vector3i nodePos, GraphUri graphUri) {
+        Vector3i sidePos = new Vector3i();
+        Map<Side, Integer> sideNodes = new HashMap<>(7);
+
+        for (Side side : Side.values()) {
+            sidePos.set(nodePos).add(side.getVector3i());
+            GraphNodeComponent nodeComponent = blockEntityRegistry.getBlockEntityAt(sidePos)
+                    .getComponent(GraphNodeComponent.class);
+            if (nodeComponent != null && nodeComponent.graphUri == graphUri) {
+                sideNodes.put(side, nodeComponent.nodeId);
+            }
+        }
+
+        return sideNodes;
+    }
+
+    /**
      * Checks and updates any node connections around a given node
      *
      * @param checkingNode The node to update around
      */
     private void checkNeighboursFor(GraphNode checkingNode) {
-        Vector3i position = new Vector3i();
-        for (Side side : Side.values()) {
-            position.set(checkingNode.getWorldPos()).add(side.getVector3i());
-            GraphNodeComponent nodeComponent = blockEntityRegistry.getBlockEntityAt(position)
-                    .getComponent(GraphNodeComponent.class);
-
-            /* If the neighbouring block is a node in this same graph update both */
-            if (nodeComponent != null && nodeComponent.graphUri == checkingNode.getGraphUri()) {
-                GraphNode otherNode = graphManager.getGraphNode(nodeComponent.graphUri, nodeComponent.nodeId);
-                checkingNode.linkNode(otherNode);
-            }
+        Map<Side, Integer> nodeMap = getNeighbouringNodes(checkingNode.getWorldPos(), checkingNode.getGraphUri());
+        for (Map.Entry<Side, Integer> entry : nodeMap.entrySet()) {
+            GraphNode otherNode = graphManager.getGraphNode(checkingNode.getGraphUri(), entry.getValue());
+            checkingNode.linkNode(otherNode);
         }
     }
 
