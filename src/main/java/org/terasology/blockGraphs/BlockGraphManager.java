@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.blockGraph;
+package org.terasology.blockGraphs;
 
 
-import org.terasology.blockGraph.graphDefinitions.BlockGraph;
-import org.terasology.blockGraph.graphDefinitions.GraphType;
-import org.terasology.blockGraph.graphDefinitions.GraphUri;
-import org.terasology.blockGraph.graphDefinitions.nodes.GraphNode;
+import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
+import org.terasology.blockGraphs.graphDefinitions.GraphType;
+import org.terasology.blockGraphs.graphDefinitions.GraphUri;
+import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.engine.SimpleUri;
 import org.terasology.world.block.BlockUri;
 

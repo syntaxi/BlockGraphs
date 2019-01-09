@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.blockGraph;
+package org.terasology.blockGraphs;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.terasology.blockGraph.graphDefinitions.BlockGraph;
-import org.terasology.blockGraph.graphDefinitions.GraphNodeComponent;
-import org.terasology.blockGraph.graphDefinitions.GraphType;
-import org.terasology.blockGraph.graphDefinitions.GraphUri;
-import org.terasology.blockGraph.graphDefinitions.nodes.GraphNode;
+import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
+import org.terasology.blockGraphs.graphDefinitions.GraphNodeComponent;
+import org.terasology.blockGraphs.graphDefinitions.GraphType;
+import org.terasology.blockGraphs.graphDefinitions.GraphUri;
+import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.entitySystem.systems.BaseComponentSystem;
 import org.terasology.entitySystem.systems.RegisterSystem;

@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.blockGraph.graphDefinitions.nodes;
+package org.terasology.blockGraphs.graphDefinitions.nodes;
 
-import org.terasology.blockGraph.dataMovement.EdgeMovementOptions;
-import org.terasology.blockGraph.graphDefinitions.BlockGraph;
-import org.terasology.blockGraph.graphDefinitions.GraphUri;
+import org.terasology.blockGraphs.dataMovement.EdgeMovementOptions;
+import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
+import org.terasology.blockGraphs.graphDefinitions.GraphUri;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;

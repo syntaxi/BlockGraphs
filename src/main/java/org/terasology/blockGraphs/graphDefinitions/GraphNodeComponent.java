@@ -13,10 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.blockGraph.dataMovement;
+package org.terasology.blockGraphs.graphDefinitions;
 
-public enum EdgeMovementOptions {
-    SAME,
-    OTHER,
-    LEAVE
+import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
+import org.terasology.entitySystem.Component;
+
+/**
+ * Indicates that a block is apart of a graph.
+ * This should only be placed onto block entities
+ *
+ * @see BlockGraph
+ * @see GraphNode
+ */
+public class GraphNodeComponent implements Component {
+    /**
+     * The URI of the graph that this block belongs to
+     */
+    public GraphUri graphUri;
+    /**
+     * The ID of the node that this graph belongs to.
+     */
+    public int nodeId;
 }

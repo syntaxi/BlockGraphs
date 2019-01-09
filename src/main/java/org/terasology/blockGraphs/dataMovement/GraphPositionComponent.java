@@ -13,25 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.blockGraph.graphDefinitions;
+package org.terasology.blockGraphs.dataMovement;
 
-import org.terasology.blockGraph.graphDefinitions.nodes.GraphNode;
+
+import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.entitySystem.Component;
+import org.terasology.math.Side;
 
-/**
- * Indicates that a block is apart of a graph.
- * This should only be placed onto block entities
- *
- * @see BlockGraph
- * @see GraphNode
- */
-public class GraphNodeComponent implements Component {
+public class GraphPositionComponent implements Component {
     /**
-     * The URI of the graph that this block belongs to
+     * The node to move this data into
      */
-    public GraphUri graphUri;
+    public GraphNode nextNode;
     /**
-     * The ID of the node that this graph belongs to.
+     * The side this data will enter by
      */
-    public int nodeId;
+    public Side nextDirection;
+
+    /**
+     * The node this data is currently in
+     */
+    public GraphNode currentNode;
+    /**
+     * The direction this data entered the node by
+     */
+    public Side currentDirection;
+
 }

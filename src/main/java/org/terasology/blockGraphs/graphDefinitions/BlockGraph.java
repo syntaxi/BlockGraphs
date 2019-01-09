@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.blockGraph.graphDefinitions;
+package org.terasology.blockGraphs.graphDefinitions;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.terasology.blockGraph.graphDefinitions.nodes.BlankNode;
-import org.terasology.blockGraph.graphDefinitions.nodes.GraphNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.BlankNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.world.block.BlockUri;
 
 import java.util.HashMap;
