@@ -15,28 +15,32 @@
  */
 package org.terasology.blockGraph.graphDefinitions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.terasology.blockGraph.graphDefinitions.nodes.BlankNode;
 import org.terasology.blockGraph.graphDefinitions.nodes.GraphNode;
 import org.terasology.world.block.BlockUri;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Represents an instance of a block graph.
  * All block graphs use this class, but have differing {@link GraphNode} implementations
  */
 public class BlockGraph {
+    private static final Logger logger = LoggerFactory.getLogger(BlockGraph.class);
 
     private GraphType graphType;
     private GraphUri uri;
 
     private int nextId = 1;
-    private List<GraphNode> nodes = new ArrayList<>();
+    private Map<Integer, GraphNode> nodes = new HashMap<>();
 
     public BlockGraph(GraphType graphType, GraphUri uri) {
         this.graphType = graphType;
         this.uri = uri;
+        nodes.put(0, BlankNode.BLANK_NODE);
     }
 
     public GraphNode getNode(int id) {
@@ -52,15 +56,6 @@ public class BlockGraph {
     }
 
     /**
-     * Ease of use wrapper method.
-     *
-     * @see GraphType#getNodeForBlock(BlockUri)
-     */
-    public Class<? extends GraphNode> getNodeForBlock(BlockUri block) {
-        return graphType.getNodeForBlock(block);
-    }
-
-    /**
      * Creates a new node for the given block.
      * <p>
      * Will fail if there is no node type linked to the block or the node type could not be instantiated.
@@ -71,9 +66,11 @@ public class BlockGraph {
      */
     public GraphNode createNode(BlockUri block) {
         try {
-            //TODO: Actually implement this
-            return graphType.getNodeForBlock(block).newInstance();
+            GraphNode newNode = graphType.getNodeForBlock(block).newInstance();
+            newNode.setNodeId(nextId++);
+            return newNode;
         } catch (InstantiationException | IllegalAccessException e) {
+            logger.error("Unable to create instance of node", e);
             return BlankNode.BLANK_NODE;
         }
     }
