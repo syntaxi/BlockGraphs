@@ -33,6 +33,7 @@ public class GraphType {
     private List<Class<? extends GraphNode>> nodeClasses = new ArrayList<>();
     private Map<BlockUri, Integer> blockMapping = new HashMap<>();
     private SimpleUri uri;
+    //Todo: Set all blocks keep active
 
     public GraphType(SimpleUri uri) {
         this.uri = uri;
