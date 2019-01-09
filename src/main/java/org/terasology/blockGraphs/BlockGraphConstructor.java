@@ -36,9 +36,12 @@ import org.terasology.world.block.Block;
 import org.terasology.world.block.BlockManager;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RegisterSystem
 @Share(BlockGraphConstructor.class)
@@ -75,7 +78,7 @@ public class BlockGraphConstructor extends BaseComponentSystem {
 
     private void floodFillFromPoint(Vector3f position, BlockGraph targetGraph) {
         GraphNode newNode = addPointToGraph(position, targetGraph);
-        checkNeighboursFor(newNode);
+        linkToNeighbourNodes(newNode);
         updateNodeConnections(newNode);
     }
 
@@ -113,11 +116,7 @@ public class BlockGraphConstructor extends BaseComponentSystem {
             GraphNode nodeConnection = entry.getValue();
             Side connectionSide = entry.getKey();
             if (nodeConnection.wasEdge()) {
-                GraphNode newNode = graphManager.getGraphInstance(nodeConnection.getGraphUri())
-                        .createNode(nodeConnection.getBlockForNode());
-                Vector3i splitPos = new Vector3i(node.getWorldPos()).add(connectionSide.getVector3i());
-                newNode.setWorldPos(splitPos);
-
+                handleDeEdging(nodeConnection);
             }
         }
     }
@@ -128,30 +127,88 @@ public class BlockGraphConstructor extends BaseComponentSystem {
      * @param oldEdge The old node that is now being updated
      */
     private void handleDeEdging(GraphNode oldEdge) {
-        oldEdge.getConnectingNodes().clear();
+        int oldId = oldEdge.getNodeId();
         Vector3i currentPos = oldEdge.getFrontPos();
         Vector3i edgeBack = oldEdge.getBackPos();
         BlockGraph graph = graphManager.getGraphInstance(oldEdge.getGraphUri());
         graph.removeNode(oldEdge);
+        Vector3i priorPos = null;
+        Set<GraphNode> nodesToRelink = new HashSet<>();
 
         GraphNode currentNode = graph.createNode(worldProvider.getBlock(currentPos).getURI());
-
-        while (currentPos != edgeBack) {
+        currentNode.setFrontPos(currentPos);
+        currentNode.setBackPos(currentPos);
+        while (currentPos != edgeBack) { /* Loop until we reach the end of the edge */
             Map<Side, Integer> nodeMap = getNeighbouringNodes(currentPos, graph.getUri());
-            if (nodeMap.size() == 2 || nodeMap.size() == 1) {
+            if (nodeMap.size() == 0) { /* There is only one node in the edge */
+                // This shouldn't be possible but may as well handle it
+                break;
+            } else if (nodeMap.size() <= 2) { /* If the current block only has two connections, we can link it */
+                GraphNodeComponent nodeComponent = blockEntityRegistry
+                        .getBlockEntityAt(currentPos)
+                        .getComponent(GraphNodeComponent.class);
+                nodeComponent.nodeId = currentNode.getNodeId();
+                currentNode.setBackPos(currentPos);
 
-            } else {
+            } else { /* We have multiple connections. So we make a junction and continue */
+                /* TODO: Need to possibly re-structure edges into a separate class to handle the intricacies like how they connect (ie, by what side)
+                 * TODO: Possibly a alternative abstract class to NODE extending form it, or from a common interface
+                 * TODO: Issue arises from the fact that both connections to an edge can be the same and thus clash in the nodes list.
+                 * TODO: Possibly just use Side.FRONT & Side.BACK but this would be overloading the class and honestly just confusing
+                 * TODO: Having to do logic for the edge is also confusing. Move methods to static and call from node type?`
+                 */
+                GraphNode junctionNode = graph.createNode(worldProvider.getBlock(currentPos).getURI());
+                nodesToRelink.add(junctionNode);
+                GraphNodeComponent nodeComponent = blockEntityRegistry
+                        .getBlockEntityAt(currentPos)
+                        .getComponent(GraphNodeComponent.class);
+                nodeComponent.nodeId = junctionNode.getNodeId();
+
+                Vector3i[] newPos = incrementPos(currentPos, priorPos, nodeMap, oldId);
+                currentPos = newPos[0];
+                priorPos = newPos[1];
+
+                currentNode = graph.createNode(worldProvider.getBlock(currentPos).getURI());
 
             }
+            /* This is kinda ugly honestly */
+            Vector3i[] newPos = incrementPos(currentPos, priorPos, nodeMap, oldId);
+            currentPos = newPos[0];
+            priorPos = newPos[1];
         }
 
+        nodesToRelink.forEach(this::linkToNeighbourNodes);
+    }
 
-        Vectori3i currentPos
-        if (nodeMap.size() == 2) {
-            currentNode.setEdgePos(edgeFront, );
-        } else {
+    /**
+     * @param currentPos The current position being scanned
+     * @param priorPos   The prior position, or null otherwise
+     * @param nodeMap    A map of all the connections
+     * @param oldId      The ID of the old edge that is being replaced
+     * @return The new position to scan and the old position
+     */
+    private Vector3i[] incrementPos(Vector3i currentPos, Vector3i priorPos, Map<Side, Integer> nodeMap, int oldId) {
+        /* Remove all the connections that are not part of the original edge */
+        nodeMap = nodeMap.entrySet()
+                .stream()
+                .filter(entry -> entry.getValue() == oldId)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
+        /* Remove the way we came */
+        if (priorPos != null && nodeMap.size() == 2) { /* If we are not on the first iteration, or last iteration */
+            nodeMap.remove(
+                    Side.inDirection(
+                            priorPos.x - currentPos.x, //If there is an error here, flip the subtraction
+                            priorPos.y - currentPos.y,
+                            priorPos.z - currentPos.z));
         }
+
+        /* Move in the last remaining direction */
+        return new Vector3i[]{currentPos,
+                nodeMap.keySet()
+                        .iterator()
+                        .next()
+                        .getAdjacentPos(priorPos)};
     }
 
     /**
@@ -186,7 +243,7 @@ public class BlockGraphConstructor extends BaseComponentSystem {
      *
      * @param checkingNode The node to update around
      */
-    private void checkNeighboursFor(GraphNode checkingNode) {
+    private void linkToNeighbourNodes(GraphNode checkingNode) {
         Map<Side, Integer> nodeMap = getNeighbouringNodes(checkingNode.getWorldPos(), checkingNode.getGraphUri());
         for (Map.Entry<Side, Integer> entry : nodeMap.entrySet()) {
             GraphNode otherNode = graphManager.getGraphNode(checkingNode.getGraphUri(), entry.getValue());
