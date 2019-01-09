@@ -19,6 +19,7 @@ package org.terasology.blockGraph;
 import org.terasology.blockGraph.graphDefinitions.BlockGraph;
 import org.terasology.blockGraph.graphDefinitions.GraphType;
 import org.terasology.blockGraph.graphDefinitions.GraphUri;
+import org.terasology.blockGraph.graphDefinitions.nodes.GraphNode;
 import org.terasology.engine.SimpleUri;
 import org.terasology.world.block.BlockUri;
 
@@ -77,5 +78,16 @@ public class BlockGraphManager {
      */
     public BlockGraph getGraphInstance(GraphUri graphUri) {
         return graphRegistry.get(graphUri);
+    }
+
+    /**
+     * Helper Method to get a specific node on a specific graph
+     *
+     * @param graphUri The graph to get the node on
+     * @param nodeId   The id of the node to get
+     * @return The node specified if it could be found
+     */
+    public GraphNode getGraphNode(GraphUri graphUri, int nodeId) {
+        return getGraphInstance(graphUri).getNode(nodeId);
     }
 }
