@@ -90,7 +90,7 @@ public abstract class GraphNode {
      * Should determine which side the data should leave by
      *
      * @param data The data being entered
-     * @return The side the data should leave by
+     * @return The side the data should leave by or null if the data should leave the network
      */
     public abstract Side dataEnterNetwork(EntityRef data);
 
@@ -101,7 +101,7 @@ public abstract class GraphNode {
      *
      * @param data  The data being moved
      * @param entry The side the data entered via
-     * @return The side the data should leave by
+     * @return The side the data should leave by or null if the data should leave the network
      */
     public abstract Side processJunction(EntityRef data, Side entry);
 
@@ -134,15 +134,19 @@ public abstract class GraphNode {
         return nodes;
     }
 
+
     /**
-     * Sets the positions to use for the ends of the edge
-     *
-     * @param front The position to use as the front of the edge
-     * @param back  The position to use as the back of the edge
+     * @param backPos The position of the block to use for the back of the edge
      */
-    public void setEdgePos(Vector3i front, Vector3i back) {
-        frontPos = front;
-        backPos = back;
+    public void setBackPos(Vector3i backPos) {
+        this.backPos = backPos;
+    }
+
+    /**
+     * @param frontPos The position of the block to use for the front of the edge
+     */
+    public void setFrontPos(Vector3i frontPos) {
+        this.frontPos = frontPos;
     }
 
     public boolean isEdge() {
