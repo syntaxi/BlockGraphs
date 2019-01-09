@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.blockGraphs.graphDefinitions.nodes.BlankNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
+import org.terasology.math.Side;
 import org.terasology.world.block.BlockUri;
 
 import java.util.HashMap;
@@ -73,5 +74,17 @@ public class BlockGraph {
             logger.error("Unable to create instance of node", e);
             return BlankNode.BLANK_NODE;
         }
+    }
+
+    /**
+     * Handles the removal of the node from the graph
+     *
+     * @param node The node to remove
+     */
+    public void removeNode(GraphNode node) {
+        for (Side side : node.getConnectingNodes().keySet()) {
+            node.unlinkNode(side);
+        }
+        nodes.remove(node.getNodeId());
     }
 }

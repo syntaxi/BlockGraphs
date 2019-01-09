@@ -208,14 +208,27 @@ public abstract class GraphNode {
      *
      * @param otherNode The other node to link to
      */
-    public void linkNode(GraphNode otherNode) {
-        /* Yes this is ugly, but it's better than making a bunch of new vectors */
-        Side nodeSide = Side.inDirection(
-                otherNode.worldPos.x - worldPos.x,
-                otherNode.worldPos.y - worldPos.y,
-                otherNode.worldPos.z - worldPos.z);
-
+    public void linkNode(GraphNode otherNode, Side nodeSide) {
         nodes.put(nodeSide, otherNode);
         otherNode.nodes.put(nodeSide.reverse(), this);
+    }
+
+    public void linkNode(GraphNode otherNode) {
+        /* Yes this is ugly, but it's better than making a bunch of new vectors */
+        linkNode(otherNode, Side.inDirection(
+                otherNode.worldPos.x - worldPos.x,
+                otherNode.worldPos.y - worldPos.y,
+                otherNode.worldPos.z - worldPos.z));
+    }
+
+    /**
+     * Unlinks this node with the node on the specific side.
+     * Ensures that the connection is removed on both this node and the adjacent one.
+     *
+     * @param side The side to unlink
+     */
+    public void unlinkNode(Side side) {
+        nodes.get(side).nodes.remove(side.reverse());
+        nodes.remove(side);
     }
 }
