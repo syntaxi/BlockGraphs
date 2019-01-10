@@ -20,7 +20,7 @@ import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
 import org.terasology.world.block.BlockUri;
 
-public interface NodeType {
+public interface NodeDefinition {
     /**
      * To simulate data being passed through the system slowly, data can be held at a node for a period of time
      *

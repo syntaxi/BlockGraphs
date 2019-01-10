@@ -31,7 +31,7 @@ import java.util.Map;
  *
  * @see BaseGraphNode
  */
-public abstract class GraphNode implements NodeType {
+public abstract class GraphNode implements NodeDefinition {
 
     private Map<Side, GraphNode> nodes = new HashMap<>(6);
     private Vector3i worldPos;
