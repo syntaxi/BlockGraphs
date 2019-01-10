@@ -16,15 +16,20 @@
 package org.terasology.blockGraphs.dataMovement;
 
 
-import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
+import org.terasology.blockGraphs.graphDefinitions.GraphUri;
 import org.terasology.entitySystem.Component;
 import org.terasology.math.Side;
 
 public class GraphPositionComponent implements Component {
     /**
+     * The graph this data is being routed through
+     */
+    public GraphUri graph;
+
+    /**
      * The node to move this data into
      */
-    public GraphNode nextNode;
+    public int nextNode;
     /**
      * The side this data will enter by
      */
@@ -33,7 +38,7 @@ public class GraphPositionComponent implements Component {
     /**
      * The node this data is currently in
      */
-    public GraphNode currentNode;
+    public int currentNode;
     /**
      * The direction this data entered the node by
      */
