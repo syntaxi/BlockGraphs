@@ -108,4 +108,13 @@ public class GraphNode {
         nodes.get(side).nodes.remove(side.reverse());
         nodes.remove(side);
     }
+
+    /**
+     * Unlink this node from all connections
+     */
+    public void unlinkAll() {
+        for (Side side : nodes.keySet()) {
+            unlinkNode(side);
+        }
+    }
 }

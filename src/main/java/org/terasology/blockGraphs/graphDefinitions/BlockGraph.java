@@ -18,8 +18,8 @@ package org.terasology.blockGraphs.graphDefinitions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.blockGraphs.graphDefinitions.nodeDefinitions.BlankNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
-import org.terasology.math.Side;
 import org.terasology.world.block.BlockUri;
 
 import java.util.HashMap;
@@ -48,6 +48,10 @@ public class BlockGraph {
         return nodes.get(id);
     }
 
+    public EdgeNode getEdgeNode(int id) {
+        return (EdgeNode) getNode(id);
+    }
+
     public GraphUri getUri() {
         return uri;
     }
@@ -66,14 +70,15 @@ public class BlockGraph {
      * @return The new node type
      */
     public GraphNode createNode(BlockUri block) {
-        try {
-            GraphNode newNode = graphType.getNodeForBlock(block).newInstance();
-            newNode.setNodeId(nextId++);
-            return newNode;
-        } catch (InstantiationException | IllegalAccessException e) {
-            logger.error("Unable to create instance of node", e);
-            return BlankNode.BLANK_NODE;
-        }
+        GraphNode node = new GraphNode(uri, nextId++);
+        nodes.put(node.getNodeId(), node);
+        return node;
+    }
+
+    public EdgeNode createEdgeNode(BlockUri block) {
+        EdgeNode node = new EdgeNode(uri, nextId++);
+        nodes.put(node.getNodeId(), node);
+        return node;
     }
 
     /**
@@ -82,9 +87,7 @@ public class BlockGraph {
      * @param node The node to remove
      */
     public void removeNode(GraphNode node) {
-        for (Side side : node.getConnectingNodes().keySet()) {
-            node.unlinkNode(side);
-        }
+        node.unlinkAll();
         nodes.remove(node.getNodeId());
     }
 }

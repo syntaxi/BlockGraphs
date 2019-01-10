@@ -128,6 +128,12 @@ public class EdgeNode extends GraphNode {
         }
     }
 
+    @Override
+    public void unlinkAll() {
+        unlinkNode(Side.FRONT);
+        unlinkNode(Side.BACK);
+    }
+
     public GraphNode getFrontNode() {
         return getConnectingNodes().get(Side.FRONT);
     }
