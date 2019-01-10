@@ -31,7 +31,7 @@ import java.util.Map;
  *
  * @see BaseJunctionNode
  */
-public class JunctionNode {
+public class JunctionNode implements GraphNode {
 
     private Map<Side, JunctionNode> nodes = new HashMap<>(6);
     private Vector3i worldPos;
