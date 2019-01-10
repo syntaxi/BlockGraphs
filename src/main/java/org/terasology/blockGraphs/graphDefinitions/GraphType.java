@@ -15,7 +15,7 @@
  */
 package org.terasology.blockGraphs.graphDefinitions;
 
-import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
+import org.terasology.blockGraphs.graphDefinitions.nodeDefinitions.NodeDefinition;
 import org.terasology.engine.SimpleUri;
 import org.terasology.world.block.BlockUri;
 
@@ -30,7 +30,7 @@ import java.util.Map;
  */
 public class GraphType {
     /* Static information for graph type */
-    private List<Class<? extends GraphNode>> nodeClasses = new ArrayList<>();
+    private List<NodeDefinition> nodeDefinitions = new ArrayList<>();
     private Map<BlockUri, Integer> blockMapping = new HashMap<>();
     private SimpleUri uri;
     //Todo: Set all blocks keep active
@@ -45,9 +45,9 @@ public class GraphType {
      *
      * @param nodeType An instance of the new node type.
      */
-    public void addNodeType(GraphNode nodeType) {
-        int index = nodeClasses.size();
-        nodeClasses.add(nodeType.getClass());
+    public void addNodeType(NodeDefinition nodeType) {
+        int index = nodeDefinitions.size();
+        nodeDefinitions.add(nodeType);
         blockMapping.put(nodeType.getBlockForNode(), index);
     }
 
@@ -58,8 +58,8 @@ public class GraphType {
      * @param block The URI of the block tp look up
      * @return The class for that node, or null if there is none
      */
-    public Class<? extends GraphNode> getNodeForBlock(BlockUri block) {
-        return nodeClasses.get(blockMapping.get(block));
+    public NodeDefinition getNodeForBlock(BlockUri block) {
+        return nodeDefinitions.get(blockMapping.get(block));
     }
 
     public SimpleUri getUri() {
