@@ -33,28 +33,23 @@ import java.util.Map;
  */
 public class GraphNode {
 
-    private Map<Side, GraphNode> nodes = new HashMap<>(6);
-    private Vector3i worldPos;
+    protected Map<Side, GraphNode> nodes = new HashMap<>(6);
+    protected Vector3i worldPos;
 
     /**
      * The id of this node in it's {@link BlockGraph} instance
      */
-    private int nodeId;
+    protected int nodeId;
 
     /**
      * The URI of the graph this node belongs to
      */
-    private GraphUri graphUri;
+    protected GraphUri graphUri;
 
-    /**
-     * The position of the 'front' of the edge
-     */
-    private Vector3i frontPos;
-    /**
-     * The position of the 'back' of the edge
-     */
-    private Vector3i backPos;
-
+    public GraphNode(GraphUri graphUri, int nodeId) {
+        this.graphUri = graphUri;
+        this.nodeId = nodeId;
+    }
 
     /**
      * @return The nodes attached to this one.
@@ -63,50 +58,8 @@ public class GraphNode {
         return nodes;
     }
 
-
-    /**
-     * @param backPos The position of the block to use for the back of the edge
-     */
-    public void setBackPos(Vector3i backPos) {
-        this.backPos = backPos;
-    }
-
-    /**
-     * @param frontPos The position of the block to use for the front of the edge
-     */
-    public void setFrontPos(Vector3i frontPos) {
-        this.frontPos = frontPos;
-    }
-
-    public boolean isEdge() {
-        return nodes.size() == 2;
-    }
-
-    /**
-     * @return True if the node is no longer an edge, and this hasn't been updated
-     */
-    public boolean wasEdge() {
-        return frontPos != null || backPos != null;
-    }
-
-    /**
-     * Clears the remnants of being an edge
-     */
-    public void clearEdge() {
-        frontPos = null;
-        backPos = null;
-    }
-
     public boolean isTerminus() {
         return nodes.size() == 1;
-    }
-
-    public Vector3i getFrontPos() {
-        return frontPos;
-    }
-
-    public Vector3i getBackPos() {
-        return backPos;
     }
 
     public Vector3i getWorldPos() {
@@ -121,16 +74,8 @@ public class GraphNode {
         return nodeId;
     }
 
-    public void setNodeId(int nodeId) {
-        this.nodeId = nodeId;
-    }
-
     public GraphUri getGraphUri() {
         return graphUri;
-    }
-
-    public void setGraphUri(GraphUri graphUri) {
-        this.graphUri = graphUri;
     }
 
     /**
