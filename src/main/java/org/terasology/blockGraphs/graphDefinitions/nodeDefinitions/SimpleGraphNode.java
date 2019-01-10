@@ -41,7 +41,7 @@ public class SimpleGraphNode implements NodeDefinition {
 
     public Side processJunction(GraphNode node, EntityRef data, Side entry) {
         /* Return a random side out of the available options */
-        return new FastRandom().nextItem(new ArrayList<>(getConnectingNodes().keySet()));
+        return new FastRandom().nextItem(new ArrayList<>(node.getConnectingNodes().keySet()));
     }
 
     public EdgeMovementOptions processEdge(EdgeNode node, EntityRef data, Side entry) {

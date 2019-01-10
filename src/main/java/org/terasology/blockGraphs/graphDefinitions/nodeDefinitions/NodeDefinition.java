@@ -85,7 +85,7 @@ public interface NodeDefinition {
      *
      * @param node  The node being processed
      * @param data  The data being moved
-     * @param entry The side entered by
+     * @param entry The end of the node entered by. Either FRONT or BACK
      * @return The side to leave by
      */
     EdgeMovementOptions processEdge(EdgeNode node, EntityRef data, Side entry);
