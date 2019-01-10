@@ -27,7 +27,7 @@ import java.util.ArrayList;
  * The most basic implementation of a node.
  * Simply randomly routes data in junctions and straight through otherwise
  */
-public class BaseGraphNode extends GraphNode {
+public class BaseJunctionNode extends JunctionNode {
 
     public BlockUri getBlockForNode() {
         return null;

@@ -21,10 +21,10 @@ import org.terasology.math.Side;
 import org.terasology.world.block.BlockUri;
 
 /**
- * Blank implementation of GraphNode
+ * Blank implementation of JunctionNode
  * Is a singleton to avoid creating an unnecessary amount of blank instances
  */
-public final class BlankNode extends GraphNode {
+public final class BlankNode extends JunctionNode {
     public static final BlankNode BLANK_NODE = new BlankNode();
 
     private BlankNode() {

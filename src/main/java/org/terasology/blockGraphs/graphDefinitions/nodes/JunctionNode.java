@@ -29,11 +29,11 @@ import java.util.Map;
  * <p>
  * Should be extended to provide specific node types
  *
- * @see BaseGraphNode
+ * @see BaseJunctionNode
  */
-public abstract class GraphNode implements NodeDefinition {
+public class JunctionNode {
 
-    private Map<Side, GraphNode> nodes = new HashMap<>(6);
+    private Map<Side, JunctionNode> nodes = new HashMap<>(6);
     private Vector3i worldPos;
 
     /**
@@ -59,7 +59,7 @@ public abstract class GraphNode implements NodeDefinition {
     /**
      * @return The nodes attached to this one.
      */
-    public Map<Side, GraphNode> getConnectingNodes() {
+    public Map<Side, JunctionNode> getConnectingNodes() {
         return nodes;
     }
 
@@ -101,7 +101,6 @@ public abstract class GraphNode implements NodeDefinition {
         return nodes.size() == 1;
     }
 
-
     public Vector3i getFrontPos() {
         return frontPos;
     }
@@ -141,12 +140,12 @@ public abstract class GraphNode implements NodeDefinition {
      *
      * @param otherNode The other node to link to
      */
-    public void linkNode(GraphNode otherNode, Side nodeSide) {
+    public void linkNode(JunctionNode otherNode, Side nodeSide) {
         nodes.put(nodeSide, otherNode);
         otherNode.nodes.put(nodeSide.reverse(), this);
     }
 
-    public void linkNode(GraphNode otherNode) {
+    public void linkNode(JunctionNode otherNode) {
         /* Yes this is ugly, but it's better than making a bunch of new vectors */
         linkNode(otherNode, Side.inDirection(
                 otherNode.worldPos.x - worldPos.x,

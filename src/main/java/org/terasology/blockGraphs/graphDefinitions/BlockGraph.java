@@ -18,7 +18,7 @@ package org.terasology.blockGraphs.graphDefinitions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.blockGraphs.graphDefinitions.nodes.BlankNode;
-import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
 import org.terasology.math.Side;
 import org.terasology.world.block.BlockUri;
 
@@ -27,7 +27,7 @@ import java.util.Map;
 
 /**
  * Represents an instance of a block graph.
- * All block graphs use this class, but have differing {@link GraphNode} implementations
+ * All block graphs use this class, but have differing {@link JunctionNode} implementations
  */
 public class BlockGraph {
     private static final Logger logger = LoggerFactory.getLogger(BlockGraph.class);
@@ -36,7 +36,7 @@ public class BlockGraph {
     private GraphUri uri;
 
     private int nextId = 1;
-    private Map<Integer, GraphNode> nodes = new HashMap<>();
+    private Map<Integer, JunctionNode> nodes = new HashMap<>();
 
     public BlockGraph(GraphType graphType, GraphUri uri) {
         this.graphType = graphType;
@@ -44,7 +44,7 @@ public class BlockGraph {
         nodes.put(0, BlankNode.BLANK_NODE);
     }
 
-    public GraphNode getNode(int id) {
+    public JunctionNode getNode(int id) {
         return nodes.get(id);
     }
 
@@ -65,9 +65,9 @@ public class BlockGraph {
      * @param block The block to create a node for
      * @return The new node type
      */
-    public GraphNode createNode(BlockUri block) {
+    public JunctionNode createNode(BlockUri block) {
         try {
-            GraphNode newNode = graphType.getNodeForBlock(block).newInstance();
+            JunctionNode newNode = graphType.getNodeForBlock(block).newInstance();
             newNode.setNodeId(nextId++);
             return newNode;
         } catch (InstantiationException | IllegalAccessException e) {
@@ -81,7 +81,7 @@ public class BlockGraph {
      *
      * @param node The node to remove
      */
-    public void removeNode(GraphNode node) {
+    public void removeNode(JunctionNode node) {
         for (Side side : node.getConnectingNodes().keySet()) {
             node.unlinkNode(side);
         }
