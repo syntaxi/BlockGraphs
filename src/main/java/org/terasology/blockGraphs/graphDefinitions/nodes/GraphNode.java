@@ -15,13 +15,10 @@
  */
 package org.terasology.blockGraphs.graphDefinitions.nodes;
 
-import org.terasology.blockGraphs.dataMovement.EdgeMovementOptions;
 import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
 import org.terasology.blockGraphs.graphDefinitions.GraphUri;
-import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;
-import org.terasology.world.block.BlockUri;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,7 +31,7 @@ import java.util.Map;
  *
  * @see BaseGraphNode
  */
-public abstract class GraphNode {
+public abstract class GraphNode implements NodeType {
 
     private Map<Side, GraphNode> nodes = new HashMap<>(6);
     private Vector3i worldPos;
@@ -58,74 +55,6 @@ public abstract class GraphNode {
      */
     private Vector3i backPos;
 
-    /**
-     * To simulate data being passed through the system slowly, data can be held at a node for a period of time
-     *
-     * @return The number of milliseconds to hold the data at the node for
-     */
-    public int holdDataFor() {
-        return -1;
-    }
-
-    /**
-     * @return The block type that this node should be linked to
-     */
-    public abstract BlockUri getBlockForNode();
-
-    /**
-     * Called when the data enters the node to allow the implementations to modify the data if they wish
-     * <p>
-     * This is called <i>before</i>
-     * - {@link #processEdge(EntityRef, Side)}
-     * - {@link #processTerminus(EntityRef)}
-     * - or {@link #processJunction(EntityRef, Side)}
-     *
-     * @param data  The data entering
-     * @param entry The side the data has entered by
-     */
-    public abstract void dataEnterNode(EntityRef data, Side entry);
-
-    /**
-     * Called when the data is initially inserted into the network via this node
-     * Should determine which side the data should leave by
-     *
-     * @param data The data being entered
-     * @return The side the data should leave by or null if the data should leave the network
-     */
-    public abstract Side dataEnterNetwork(EntityRef data);
-
-    /**
-     * Returns which side the data should move into
-     * <p>
-     * This is called <i>after</i> {@link #dataEnterNode(EntityRef, Side)}
-     *
-     * @param data  The data being moved
-     * @param entry The side the data entered via
-     * @return The side the data should leave by or null if the data should leave the network
-     */
-    public abstract Side processJunction(EntityRef data, Side entry);
-
-    /**
-     * Returns which side the data should leave from.
-     * Only applies when the node is in edge format
-     * <p>
-     * This is called <i>after</i> {@link #dataEnterNode(EntityRef, Side)}
-     *
-     * @param data  The data being moved
-     * @param entry The side entered by
-     * @return The side to leave by
-     */
-    public abstract EdgeMovementOptions processEdge(EntityRef data, Side entry);
-
-    /**
-     * Processes the case where the data has just entered a junction node.
-     * <p>
-     * This is called <i>after</i> {@link #dataEnterNode(EntityRef, Side)}
-     *
-     * @param data The data being moved
-     * @return True if the data should leave and false if the data should leave the way it entered
-     */
-    public abstract boolean processTerminus(EntityRef data);
 
     /**
      * @return The nodes attached to this one.
