@@ -40,10 +40,9 @@ public interface NodeDefinition {
      * Called when the data enters the node to allow the implementations to modify the data if they wish
      * <p>
      * This is called <i>before</i>
-     * - {@link #processEdge(EntityRef, EntityRef, Side)}
-     * - {@link #processTerminus(EntityRef, EntityRef)}
-     * - or {@link #processJunction(EntityRef, EntityRef, Side)}
-     *
+     * - {@link #processEdge(EdgeNode, EntityRef, Side)}
+     * - {@link #processTerminus(JunctionNode, EntityRef)}
+     * - or {@link #processJunction(JunctionNode, EntityRef, Side)}
      * @param node  The node being processed
      * @param data  The data entering
      * @param entry The side the data has entered by
@@ -59,7 +58,7 @@ public interface NodeDefinition {
      * @param data The data being entered
      * @return The side the data should leave by or null if the data should leave the network
      */
-    default Side dataEnterNetwork(EntityRef node, EntityRef data) {
+    default Side dataEnterNetwork(JunctionNode node, EntityRef data) {
         return processJunction(node, data, null);
     }
 
@@ -73,7 +72,7 @@ public interface NodeDefinition {
      * @param entry The side the data entered via
      * @return The side the data should leave by or null if the data should leave the network
      */
-    Side processJunction(EntityRef node, EntityRef data, Side entry);
+    Side processJunction(JunctionNode node, EntityRef data, Side entry);
 
     /**
      * Returns which side the data should leave from.
@@ -86,7 +85,7 @@ public interface NodeDefinition {
      * @param entry The side entered by
      * @return The side to leave by
      */
-    EdgeMovementOptions processEdge(EntityRef node, EntityRef data, Side entry);
+    EdgeMovementOptions processEdge(EdgeNode node, EntityRef data, Side entry);
 
     /**
      * Processes the case where the data has just entered a junction node.
@@ -97,6 +96,6 @@ public interface NodeDefinition {
      * @param data The data being moved
      * @return True if the data should leave and false if the data should leave the way it entered
      */
-    boolean processTerminus(EntityRef node, EntityRef data);
+    boolean processTerminus(JunctionNode node, EntityRef data);
 
 }
