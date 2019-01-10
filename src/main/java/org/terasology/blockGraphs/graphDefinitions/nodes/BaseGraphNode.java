@@ -29,35 +29,26 @@ import java.util.ArrayList;
  */
 public class BaseGraphNode extends GraphNode {
 
-    @Override
     public BlockUri getBlockForNode() {
         return null;
     }
 
     @Override
-    public void dataEnterNode(EntityRef data, Side entry) {
-        // Do nothing
+    public Side dataEnterNetwork(EntityRef node, EntityRef data) {
+        return processJunction(node, data, null);
     }
 
-    @Override
-    public Side dataEnterNetwork(EntityRef data) {
-        return processJunction(data, null);
-    }
-
-    @Override
-    public Side processJunction(EntityRef data, Side entry) {
+    public Side processJunction(EntityRef node, EntityRef data, Side entry) {
         /* Return a random side out of the available options */
         return new FastRandom().nextItem(new ArrayList<>(getConnectingNodes().keySet()));
     }
 
-    @Override
-    public EdgeMovementOptions processEdge(EntityRef data, Side entry) {
-        /* Choose opposite option */
+    public EdgeMovementOptions processEdge(EntityRef node, EntityRef data, Side entry) {
+        /* Choose opposite option. Ie, move data through */
         return EdgeMovementOptions.OTHER;
     }
 
-    @Override
-    public boolean processTerminus(EntityRef data) {
+    public boolean processTerminus(EntityRef node, EntityRef data) {
         /* Always pop the data out */
         return true;
     }

@@ -31,33 +31,19 @@ public final class BlankNode extends GraphNode {
 
     }
 
-    @Override
     public BlockUri getBlockForNode() {
         return null;
     }
 
-    @Override
-    public void dataEnterNode(EntityRef data, Side entry) {
-
-    }
-
-    @Override
-    public Side dataEnterNetwork(EntityRef data) {
+    public Side processJunction(EntityRef node, EntityRef data, Side entry) {
         return null;
     }
 
-    @Override
-    public Side processJunction(EntityRef data, Side entry) {
+    public EdgeMovementOptions processEdge(EntityRef node, EntityRef data, Side entry) {
         return null;
     }
 
-    @Override
-    public EdgeMovementOptions processEdge(EntityRef data, Side entry) {
-        return null;
-    }
-
-    @Override
-    public boolean processTerminus(EntityRef data) {
+    public boolean processTerminus(EntityRef node, EntityRef data) {
         return false;
     }
 }

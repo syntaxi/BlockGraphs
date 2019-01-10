@@ -24,9 +24,10 @@ public interface NodeType {
     /**
      * To simulate data being passed through the system slowly, data can be held at a node for a period of time
      *
+     * @param node The node being processed
      * @return The number of milliseconds to hold the data at the node for
      */
-    default int holdDataFor() {
+    default int holdDataFor(EntityRef node) {
         return -1;
     }
 
@@ -39,55 +40,63 @@ public interface NodeType {
      * Called when the data enters the node to allow the implementations to modify the data if they wish
      * <p>
      * This is called <i>before</i>
-     * - {@link #processEdge(EntityRef, Side)}
-     * - {@link #processTerminus(EntityRef)}
-     * - or {@link #processJunction(EntityRef, Side)}
+     * - {@link #processEdge(EntityRef, EntityRef, Side)}
+     * - {@link #processTerminus(EntityRef, EntityRef)}
+     * - or {@link #processJunction(EntityRef, EntityRef, Side)}
      *
+     * @param node  The node being processed
      * @param data  The data entering
      * @param entry The side the data has entered by
      */
-    void dataEnterNode(EntityRef data, Side entry);
+    default void dataEnterNode(EntityRef node, EntityRef data, Side entry) {
+    }
 
     /**
      * Called when the data is initially inserted into the network via this node
      * Should determine which side the data should leave by
      *
+     * @param node The node being processed
      * @param data The data being entered
      * @return The side the data should leave by or null if the data should leave the network
      */
-    Side dataEnterNetwork(EntityRef data);
+    default Side dataEnterNetwork(EntityRef node, EntityRef data) {
+        return processJunction(node, data, null);
+    }
 
     /**
      * Returns which side the data should move into
      * <p>
-     * This is called <i>after</i> {@link #dataEnterNode(EntityRef, Side)}
+     * This is called <i>after</i> {@link #dataEnterNode(EntityRef, EntityRef, Side)}
      *
+     * @param node  The node being processed
      * @param data  The data being moved
      * @param entry The side the data entered via
      * @return The side the data should leave by or null if the data should leave the network
      */
-    Side processJunction(EntityRef data, Side entry);
+    Side processJunction(EntityRef node, EntityRef data, Side entry);
 
     /**
      * Returns which side the data should leave from.
      * Only applies when the node is in edge format
      * <p>
-     * This is called <i>after</i> {@link #dataEnterNode(EntityRef, Side)}
+     * This is called <i>after</i> {@link #dataEnterNode(EntityRef, EntityRef, Side)}
      *
+     * @param node  The node being processed
      * @param data  The data being moved
      * @param entry The side entered by
      * @return The side to leave by
      */
-    EdgeMovementOptions processEdge(EntityRef data, Side entry);
+    EdgeMovementOptions processEdge(EntityRef node, EntityRef data, Side entry);
 
     /**
      * Processes the case where the data has just entered a junction node.
      * <p>
-     * This is called <i>after</i> {@link #dataEnterNode(EntityRef, Side)}
+     * This is called <i>after</i> {@link #dataEnterNode(EntityRef, EntityRef, Side)}
      *
+     * @param node The node being processed
      * @param data The data being moved
      * @return True if the data should leave and false if the data should leave the way it entered
      */
-    boolean processTerminus(EntityRef data);
+    boolean processTerminus(EntityRef node, EntityRef data);
 
 }
