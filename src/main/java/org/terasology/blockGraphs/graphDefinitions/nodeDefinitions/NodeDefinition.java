@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.blockGraphs.graphDefinitions.nodes;
+package org.terasology.blockGraphs.graphDefinitions.nodeDefinitions;
 
 import org.terasology.blockGraphs.dataMovement.EdgeMovementOptions;
+import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
 import org.terasology.world.block.BlockUri;
@@ -27,7 +29,7 @@ public interface NodeDefinition {
      * @param node The node being processed
      * @return The number of milliseconds to hold the data at the node for
      */
-    default int holdDataFor(EntityRef node) {
+    default int holdDataFor(GraphNode node) {
         return -1;
     }
 
@@ -43,11 +45,12 @@ public interface NodeDefinition {
      * - {@link #processEdge(EdgeNode, EntityRef, Side)}
      * - {@link #processTerminus(GraphNode, EntityRef)}
      * - or {@link #processJunction(GraphNode, EntityRef, Side)}
+     *
      * @param node  The node being processed
      * @param data  The data entering
      * @param entry The side the data has entered by
      */
-    default void dataEnterNode(EntityRef node, EntityRef data, Side entry) {
+    default void dataEnterNode(GraphNode node, EntityRef data, Side entry) {
     }
 
     /**
@@ -65,7 +68,7 @@ public interface NodeDefinition {
     /**
      * Returns which side the data should move into
      * <p>
-     * This is called <i>after</i> {@link #dataEnterNode(EntityRef, EntityRef, Side)}
+     * This is called <i>after</i> {@link #dataEnterNode(GraphNode, EntityRef, Side)}
      *
      * @param node  The node being processed
      * @param data  The data being moved
@@ -78,7 +81,7 @@ public interface NodeDefinition {
      * Returns which side the data should leave from.
      * Only applies when the node is in edge format
      * <p>
-     * This is called <i>after</i> {@link #dataEnterNode(EntityRef, EntityRef, Side)}
+     * This is called <i>after</i> {@link #dataEnterNode(GraphNode, EntityRef, Side)}
      *
      * @param node  The node being processed
      * @param data  The data being moved
@@ -90,7 +93,7 @@ public interface NodeDefinition {
     /**
      * Processes the case where the data has just entered a junction node.
      * <p>
-     * This is called <i>after</i> {@link #dataEnterNode(EntityRef, EntityRef, Side)}
+     * This is called <i>after</i> {@link #dataEnterNode(GraphNode, EntityRef, Side)}
      *
      * @param node The node being processed
      * @param data The data being moved

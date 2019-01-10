@@ -17,7 +17,7 @@ package org.terasology.blockGraphs.graphDefinitions;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.terasology.blockGraphs.graphDefinitions.nodes.BlankNode;
+import org.terasology.blockGraphs.graphDefinitions.nodeDefinitions.BlankNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.math.Side;
 import org.terasology.world.block.BlockUri;

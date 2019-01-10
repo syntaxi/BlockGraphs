@@ -19,7 +19,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import org.terasology.blockGraphs.BlockGraphManager;
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
-import org.terasology.blockGraphs.graphDefinitions.nodes.NodeDefinition;
+import org.terasology.blockGraphs.graphDefinitions.nodeDefinitions.NodeDefinition;
 import org.terasology.engine.Time;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.entitySystem.systems.BaseComponentSystem;
