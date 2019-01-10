@@ -33,11 +33,11 @@ public class SimpleGraphNode implements NodeDefinition {
         return null;
     }
 
-    public Side dataEnterNetwork(JunctionNode node, EntityRef data) {
+    public Side dataEnterNetwork(GraphNode node, EntityRef data) {
         return processJunction(node, data, null);
     }
 
-    public Side processJunction(JunctionNode node, EntityRef data, Side entry) {
+    public Side processJunction(GraphNode node, EntityRef data, Side entry) {
         /* Return a random side out of the available options */
         return new FastRandom().nextItem(new ArrayList<>(getConnectingNodes().keySet()));
     }
@@ -47,7 +47,7 @@ public class SimpleGraphNode implements NodeDefinition {
         return EdgeMovementOptions.OTHER;
     }
 
-    public boolean processTerminus(JunctionNode node, EntityRef data) {
+    public boolean processTerminus(GraphNode node, EntityRef data) {
         /* Always pop the data out */
         return true;
     }

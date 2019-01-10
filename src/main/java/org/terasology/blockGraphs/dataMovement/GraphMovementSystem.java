@@ -17,7 +17,9 @@ package org.terasology.blockGraphs.dataMovement;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
+import org.terasology.blockGraphs.BlockGraphManager;
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.NodeDefinition;
 import org.terasology.engine.Time;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.entitySystem.systems.BaseComponentSystem;
@@ -46,6 +48,9 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
     private Time time;
     private List<EntityRef> entitiesToProcess = new LinkedList<>();
 
+    @In
+    private BlockGraphManager graphManager;
+
     @Override
     public void update(float delta) {
         if (time.getGameTimeInMs() >= delays.firstKey()) {
@@ -62,13 +67,14 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
     /**
      * Adds data into the network, specifically to be moved around
      *
+     * @param node        The node to insert the data via
      * @param data        The data to add
-     * @param currentNode The node to add at
+     * @param currentNode The definition for the node being added
      */
-    public void insertData(EntityRef data, GraphNode currentNode) {
-        Side nextDirection = currentNode.dataEnterNetwork(data);
-        GraphPositionComponent component = new GraphPositionComponent();
+    public void insertData(EntityRef node, EntityRef data, NodeDefinition currentNode) {
+        Side nextDirection = currentNode.dataEnterNetwork(node, data);
 
+        GraphPositionComponent component = new GraphPositionComponent();
         component.currentNode = currentNode;
         component.currentDirection = null;
         data.addOrSaveComponent(component);

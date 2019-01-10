@@ -41,8 +41,8 @@ public interface NodeDefinition {
      * <p>
      * This is called <i>before</i>
      * - {@link #processEdge(EdgeNode, EntityRef, Side)}
-     * - {@link #processTerminus(JunctionNode, EntityRef)}
-     * - or {@link #processJunction(JunctionNode, EntityRef, Side)}
+     * - {@link #processTerminus(GraphNode, EntityRef)}
+     * - or {@link #processJunction(GraphNode, EntityRef, Side)}
      * @param node  The node being processed
      * @param data  The data entering
      * @param entry The side the data has entered by
@@ -58,7 +58,7 @@ public interface NodeDefinition {
      * @param data The data being entered
      * @return The side the data should leave by or null if the data should leave the network
      */
-    default Side dataEnterNetwork(JunctionNode node, EntityRef data) {
+    default Side dataEnterNetwork(GraphNode node, EntityRef data) {
         return processJunction(node, data, null);
     }
 
@@ -72,7 +72,7 @@ public interface NodeDefinition {
      * @param entry The side the data entered via
      * @return The side the data should leave by or null if the data should leave the network
      */
-    Side processJunction(JunctionNode node, EntityRef data, Side entry);
+    Side processJunction(GraphNode node, EntityRef data, Side entry);
 
     /**
      * Returns which side the data should leave from.
@@ -96,6 +96,6 @@ public interface NodeDefinition {
      * @param data The data being moved
      * @return True if the data should leave and false if the data should leave the way it entered
      */
-    boolean processTerminus(JunctionNode node, EntityRef data);
+    boolean processTerminus(GraphNode node, EntityRef data);
 
 }

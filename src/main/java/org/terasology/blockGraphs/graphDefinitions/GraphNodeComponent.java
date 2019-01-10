@@ -15,7 +15,7 @@
  */
 package org.terasology.blockGraphs.graphDefinitions;
 
-import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.entitySystem.Component;
 
 /**
@@ -23,7 +23,7 @@ import org.terasology.entitySystem.Component;
  * This should only be placed onto block entities
  *
  * @see BlockGraph
- * @see JunctionNode
+ * @see GraphNode
  */
 public class GraphNodeComponent implements Component {
     /**

@@ -19,7 +19,7 @@ package org.terasology.blockGraphs;
 import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
 import org.terasology.blockGraphs.graphDefinitions.GraphType;
 import org.terasology.blockGraphs.graphDefinitions.GraphUri;
-import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.engine.SimpleUri;
 import org.terasology.world.block.BlockUri;
 
@@ -87,7 +87,7 @@ public class BlockGraphManager {
      * @param nodeId   The id of the node to get
      * @return The node specified if it could be found
      */
-    public JunctionNode getGraphNode(GraphUri graphUri, int nodeId) {
+    public GraphNode getGraphNode(GraphUri graphUri, int nodeId) {
         return getGraphInstance(graphUri).getNode(nodeId);
     }
 }

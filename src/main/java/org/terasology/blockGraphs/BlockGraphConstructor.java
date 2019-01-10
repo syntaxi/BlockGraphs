@@ -21,7 +21,7 @@ import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
 import org.terasology.blockGraphs.graphDefinitions.GraphNodeComponent;
 import org.terasology.blockGraphs.graphDefinitions.GraphType;
 import org.terasology.blockGraphs.graphDefinitions.GraphUri;
-import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.entitySystem.systems.BaseComponentSystem;
 import org.terasology.entitySystem.systems.RegisterSystem;
@@ -77,7 +77,7 @@ public class BlockGraphConstructor extends BaseComponentSystem {
     }
 
     private void floodFillFromPoint(Vector3f position, BlockGraph targetGraph) {
-        JunctionNode newNode = addPointToGraph(position, targetGraph);
+        GraphNode newNode = addPointToGraph(position, targetGraph);
         linkToNeighbourNodes(newNode);
         updateNodeConnections(newNode);
     }
@@ -89,13 +89,13 @@ public class BlockGraphConstructor extends BaseComponentSystem {
      * @param targetGraph The graph to add the block too
      * @return The node at the given position.
      */
-    private JunctionNode addPointToGraph(Vector3f position, BlockGraph targetGraph) {
+    private GraphNode addPointToGraph(Vector3f position, BlockGraph targetGraph) {
         EntityRef blockEntity = blockEntityRegistry.getBlockEntityAt(position);
         GraphNodeComponent nodeComponent = blockEntity.getComponent(GraphNodeComponent.class);
 
         /* Only add the position to this graph if it isn't already */
         if (nodeComponent == null || nodeComponent.graphUri != targetGraph.getUri()) {
-            JunctionNode newNode = targetGraph.createNode(
+            GraphNode newNode = targetGraph.createNode(
                     worldProvider.getBlock(position).getURI());
             newNode.setWorldPos(new Vector3i(position));
 
@@ -110,10 +110,10 @@ public class BlockGraphConstructor extends BaseComponentSystem {
         }
     }
 
-    private void updateNodeConnections(JunctionNode node) {
+    private void updateNodeConnections(GraphNode node) {
         /* Handle any nodes that this one has made stop being an edge */
-        for (Map.Entry<Side, JunctionNode> entry : node.getConnectingNodes().entrySet()) {
-            JunctionNode nodeConnection = entry.getValue();
+        for (Map.Entry<Side, GraphNode> entry : node.getConnectingNodes().entrySet()) {
+            GraphNode nodeConnection = entry.getValue();
             Side connectionSide = entry.getKey();
             if (nodeConnection.wasEdge()) {
                 handleDeEdging(nodeConnection);
@@ -126,16 +126,16 @@ public class BlockGraphConstructor extends BaseComponentSystem {
      *
      * @param oldEdge The old node that is now being updated
      */
-    private void handleDeEdging(JunctionNode oldEdge) {
+    private void handleDeEdging(GraphNode oldEdge) {
         int oldId = oldEdge.getNodeId();
         Vector3i currentPos = oldEdge.getFrontPos();
         Vector3i edgeBack = oldEdge.getBackPos();
         BlockGraph graph = graphManager.getGraphInstance(oldEdge.getGraphUri());
         graph.removeNode(oldEdge);
         Vector3i priorPos = null;
-        Set<JunctionNode> nodesToRelink = new HashSet<>();
+        Set<GraphNode> nodesToRelink = new HashSet<>();
 
-        JunctionNode currentNode = graph.createNode(worldProvider.getBlock(currentPos).getURI());
+        GraphNode currentNode = graph.createNode(worldProvider.getBlock(currentPos).getURI());
         currentNode.setFrontPos(currentPos);
         currentNode.setBackPos(currentPos);
         while (currentPos != edgeBack) { /* Loop until we reach the end of the edge */
@@ -157,12 +157,12 @@ public class BlockGraphConstructor extends BaseComponentSystem {
                  * TODO: Possibly just use Side.FRONT & Side.BACK but this would be overloading the class and honestly just confusing
                  * TODO: Having to do logic for the edge is also confusing. Move methods to static and call from node type?`
                  */
-                JunctionNode junctionNode = graph.createNode(worldProvider.getBlock(currentPos).getURI());
-                nodesToRelink.add(junctionNode);
+                GraphNode graphNode = graph.createNode(worldProvider.getBlock(currentPos).getURI());
+                nodesToRelink.add(graphNode);
                 GraphNodeComponent nodeComponent = blockEntityRegistry
                         .getBlockEntityAt(currentPos)
                         .getComponent(GraphNodeComponent.class);
-                nodeComponent.nodeId = junctionNode.getNodeId();
+                nodeComponent.nodeId = graphNode.getNodeId();
 
                 Vector3i[] newPos = incrementPos(currentPos, priorPos, nodeMap, oldId);
                 currentPos = newPos[0];
@@ -243,10 +243,10 @@ public class BlockGraphConstructor extends BaseComponentSystem {
      *
      * @param checkingNode The node to update around
      */
-    private void linkToNeighbourNodes(JunctionNode checkingNode) {
+    private void linkToNeighbourNodes(GraphNode checkingNode) {
         Map<Side, Integer> nodeMap = getNeighbouringNodes(checkingNode.getWorldPos(), checkingNode.getGraphUri());
         for (Map.Entry<Side, Integer> entry : nodeMap.entrySet()) {
-            JunctionNode otherNode = graphManager.getGraphNode(checkingNode.getGraphUri(), entry.getValue());
+            GraphNode otherNode = graphManager.getGraphNode(checkingNode.getGraphUri(), entry.getValue());
             checkingNode.linkNode(otherNode);
         }
     }
