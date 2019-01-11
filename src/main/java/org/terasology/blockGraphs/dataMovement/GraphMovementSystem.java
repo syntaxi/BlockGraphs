@@ -18,8 +18,9 @@ package org.terasology.blockGraphs.dataMovement;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import org.terasology.blockGraphs.BlockGraphManager;
-import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.blockGraphs.graphDefinitions.nodeDefinitions.NodeDefinition;
+import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.engine.Time;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.entitySystem.systems.BaseComponentSystem;
@@ -67,19 +68,19 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
     /**
      * Adds data into the network, specifically to be moved around
      *
-     * @param node        The node to insert the data via
+     * @param node        The node to insert the data at
      * @param data        The data to add
      * @param currentNode The definition for the node being added
      */
-    public void insertData(EntityRef node, EntityRef data, NodeDefinition currentNode) {
+    public void insertData(GraphNode node, EntityRef data, NodeDefinition currentNode) {
         Side nextDirection = currentNode.dataEnterNetwork(node, data);
 
         GraphPositionComponent component = new GraphPositionComponent();
-        component.currentNode = currentNode;
+        component.currentNode = node.getNodeId();
         component.currentDirection = null;
         data.addOrSaveComponent(component);
 
-        moveToNode(data, nextDirection);
+        moveToNode(data, nextDirection, currentNode.holdDataFor(node));
     }
 
 
@@ -100,20 +101,23 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
         component.currentNode = component.nextNode;
         component.currentDirection = component.nextDirection;
 
-        /* Allow the data to operate on the node */
-        component.currentNode.dataEnterNode(data, component.currentDirection);
+        GraphNode currentNode = graphManager.getGraphNode(component.graph, component.currentNode);
+        NodeDefinition nodeDefinition = graphManager.getNodeDefinition(component.graph, component.currentNode);
+
+        /* Allow the node ot operate on the data */
+        nodeDefinition.dataEnterNode(currentNode, data, component.currentDirection);
 
         /* Query the now current node for the next movement */
-        if (component.currentNode.isEdge()) {
-            switch (component.currentNode.processEdge(data, component.currentDirection)) {
+        if (currentNode instanceof EdgeNode) {
+            switch (nodeDefinition.processEdge((EdgeNode) currentNode, data, component.currentDirection)) {
                 case SAME:
-                    moveToNode(data, component.currentDirection);
+                    moveToNode(data, component.currentDirection, nodeDefinition.holdDataFor(currentNode));
                     break;
                 case LEAVE:
                     /* There are only two connections so the one that doesn't match current is the option we want */
-                    for (Side side : component.currentNode.getConnectingNodes().keySet()) {
+                    for (Side side : currentNode.getConnectingNodes().keySet()) {
                         if (side != component.currentDirection) {
-                            moveToNode(data, component.currentDirection.reverse());
+                            moveToNode(data, component.currentDirection.reverse(), nodeDefinition.holdDataFor(currentNode));
                         }
                     }
                     break;
@@ -121,19 +125,19 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
                 default:
                     removeFromNetwork(data);
             }
-        } else if (component.currentNode.isTerminus()) {
-            if (component.currentNode.processTerminus(data)) {
+        } else if (currentNode.isTerminus()) {
+            if (nodeDefinition.processTerminus(currentNode, data)) {
                 removeFromNetwork(data);
             } else {
                 /* There is only on connection so bounce back the way it came in */
-                moveToNode(data, component.currentDirection);
+                moveToNode(data, component.currentDirection, nodeDefinition.holdDataFor(currentNode));
             }
         } else {
-            Side side = component.currentNode.processJunction(data, component.currentDirection);
+            Side side = nodeDefinition.processJunction(currentNode, data, component.currentDirection);
             if (side == null) {
                 removeFromNetwork(data);
             } else {
-                moveToNode(data, side);
+                moveToNode(data, side, nodeDefinition.holdDataFor(currentNode));
             }
         }
     }
@@ -144,14 +148,14 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
      * @param data        The data to move
      * @param leavingSide The side to leave via
      */
-    private void moveToNode(EntityRef data, Side leavingSide) {
+    private void moveToNode(EntityRef data, Side leavingSide, int holdDuration) {
         GraphPositionComponent positionComponent = data.getComponent(GraphPositionComponent.class);
-        GraphNode currentNode = positionComponent.currentNode;
+        GraphNode currentNode = graphManager.getGraphNode(positionComponent.graph, positionComponent.currentNode);
 
-        positionComponent.nextNode = currentNode.getConnectingNodes().get(leavingSide);
+        positionComponent.nextNode = currentNode.getConnectingNodes().get(leavingSide).getNodeId();
         positionComponent.nextDirection = leavingSide.reverse();
 
-        entitiesToProcess.add(currentNode.holdDataFor(), data);
+        entitiesToProcess.add(holdDuration, data);
     }
 
     private void removeFromNetwork(EntityRef data) {
