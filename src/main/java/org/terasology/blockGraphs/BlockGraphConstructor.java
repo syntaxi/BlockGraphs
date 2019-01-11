@@ -65,9 +65,9 @@ public class BlockGraphConstructor extends BaseComponentSystem {
      */
     public GraphUri constructEntireGraph(Vector3f position) {
         Block startBlock = worldProvider.getBlock(position);
-        Optional<GraphType> graphType = graphManager.getGraphType(startBlock.getURI());
-        if (graphType.isPresent()) {
-            BlockGraph newGraph = graphManager.newGraphInstance(graphType.get());
+        GraphType graphType = graphManager.getGraphType(startBlock.getURI());
+        if (graphType != null) {
+            BlockGraph newGraph = graphManager.newGraphInstance(graphType);
             floodFillFromPoint(position, newGraph);
             return newGraph.getUri();
         } else {
@@ -183,20 +183,20 @@ public class BlockGraphConstructor extends BaseComponentSystem {
     /**
      * @param currentPos The current position being scanned
      * @param priorPos   The prior position, or null otherwise
-     * @param nodeMap    A map of all the connections
+     * @param fullMap    A map of all the connections
      * @param oldId      The ID of the old edge that is being replaced
      * @return The new position to scan and the old position
      */
-    private Vector3i[] incrementPos(Vector3i currentPos, Vector3i priorPos, Map<Side, Integer> nodeMap, int oldId) {
+    private Vector3i[] incrementPos(Vector3i currentPos, Vector3i priorPos, Map<Side, Integer> fullMap, int oldId) {
         /* Remove all the connections that are not part of the original edge */
-        nodeMap = nodeMap.entrySet()
+        Map<Side, Integer> filteredMap = fullMap.entrySet()
                 .stream()
                 .filter(entry -> entry.getValue() == oldId)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         /* Remove the way we came */
-        if (priorPos != null && nodeMap.size() == 2) { /* If we are not on the first iteration, or last iteration */
-            nodeMap.remove(
+        if (priorPos != null && filteredMap.size() == 2) { /* If we are not on the first iteration, or last iteration */
+            filteredMap.remove(
                     Side.inDirection(
                             priorPos.x - currentPos.x, //If there is an error here, flip the subtraction
                             priorPos.y - currentPos.y,
@@ -205,7 +205,7 @@ public class BlockGraphConstructor extends BaseComponentSystem {
 
         /* Move in the last remaining direction */
         return new Vector3i[]{currentPos,
-                nodeMap.keySet()
+                filteredMap.keySet()
                         .iterator()
                         .next()
                         .getAdjacentPos(priorPos)};
