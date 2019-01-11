@@ -33,27 +33,36 @@ import java.util.Map;
  */
 public class GraphNode {
 
+    /**
+     * All the nodes attached to this one, and what side they physically are on
+     */
     protected Map<Side, GraphNode> nodes = new HashMap<>(6);
+    /**
+     * The position of this node in the world
+     */
     protected Vector3i worldPos;
 
     /**
      * The id of this node in it's {@link BlockGraph} instance
      */
-    protected int nodeId;
+    private int nodeId;
 
     /**
      * The URI of the graph this node belongs to
      */
-    protected GraphUri graphUri;
-
-    public GraphNode(GraphUri graphUri, int nodeId) {
-        this.graphUri = graphUri;
-        this.nodeId = nodeId;
-    }
+    private GraphUri graphUri;
 
     /**
-     * @return The nodes attached to this one.
+     * The ID of the definition this node is linked to
      */
+    private int definitionId;
+
+    public GraphNode(GraphUri graphUri, int nodeId, int definitionId) {
+        this.graphUri = graphUri;
+        this.nodeId = nodeId;
+        this.definitionId = definitionId;
+    }
+
     public Map<Side, GraphNode> getConnectingNodes() {
         return nodes;
     }
@@ -76,6 +85,10 @@ public class GraphNode {
 
     public GraphUri getGraphUri() {
         return graphUri;
+    }
+
+    public int getDefinitionId() {
+        return definitionId;
     }
 
     /**
