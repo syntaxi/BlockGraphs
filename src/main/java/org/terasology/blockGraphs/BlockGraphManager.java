@@ -19,13 +19,13 @@ package org.terasology.blockGraphs;
 import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
 import org.terasology.blockGraphs.graphDefinitions.GraphType;
 import org.terasology.blockGraphs.graphDefinitions.GraphUri;
+import org.terasology.blockGraphs.graphDefinitions.nodeDefinitions.NodeDefinition;
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.engine.SimpleUri;
 import org.terasology.world.block.BlockUri;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 public class BlockGraphManager {
     private long nextGraphId = 1L;
@@ -40,8 +40,8 @@ public class BlockGraphManager {
      * @param typeUri The URI for that graph type.
      * @return The graph type, if it exists
      */
-    public Optional<GraphType> getGraphType(SimpleUri typeUri) {
-        return Optional.ofNullable(graphTypes.getOrDefault(typeUri, null));
+    public GraphType getGraphType(SimpleUri typeUri) {
+        return graphTypes.getOrDefault(typeUri, null);
     }
 
     /**
@@ -50,7 +50,7 @@ public class BlockGraphManager {
      * @param blockInGraph The URI of the block to check
      * @return The graph type if it could be found
      */
-    public Optional<GraphType> getGraphType(BlockUri blockInGraph) {
+    public GraphType getGraphType(BlockUri blockInGraph) {
         return getGraphType(blockToGraph.getOrDefault(blockInGraph, new SimpleUri()));
     }
 
@@ -89,5 +89,17 @@ public class BlockGraphManager {
      */
     public GraphNode getGraphNode(GraphUri graphUri, int nodeId) {
         return getGraphInstance(graphUri).getNode(nodeId);
+    }
+
+    /**
+     * Helper method to get the node definition for a specified node type
+     *
+     * @param graph  The graph the node belongs to
+     * @param nodeId The id of the node in question
+     * @return The node definition linked to that node
+     */
+    public NodeDefinition getNodeDefinition(GraphUri graph, int nodeId) {
+        BlockGraph graphInstance = getGraphInstance(graph);
+        return graphInstance.getGraphType().getDefinition(graphInstance.getNode(nodeId));
     }
 }
