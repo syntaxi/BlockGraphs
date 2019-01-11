@@ -16,6 +16,7 @@
 package org.terasology.blockGraphs.graphDefinitions;
 
 import org.terasology.blockGraphs.graphDefinitions.nodeDefinitions.NodeDefinition;
+import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.engine.SimpleUri;
 import org.terasology.world.block.BlockUri;
 
@@ -55,11 +56,23 @@ public class GraphType {
      * Get the graph node linked to that block type.
      * Will error if there is no class linked to the block type
      *
-     * @param block The URI of the block tp look up
+     * @param block The URI of the block to look up
      * @return The class for that node, or null if there is none
      */
-    public NodeDefinition getNodeForBlock(BlockUri block) {
+    public NodeDefinition getDefinition(BlockUri block) {
         return nodeDefinitions.get(blockMapping.get(block));
+    }
+
+    public NodeDefinition getDefinition(GraphNode node) {
+        return nodeDefinitions.get(node.getDefinitionId());
+    }
+
+    public NodeDefinition getDefinition(int id) {
+        return nodeDefinitions.get(id);
+    }
+
+    public int getDefinitionId(BlockUri block) {
+        return blockMapping.get(block);
     }
 
     public SimpleUri getUri() {
