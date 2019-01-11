@@ -45,8 +45,8 @@ public class EdgeNode extends GraphNode {
      */
     private Side backSide;
 
-    public EdgeNode(GraphUri graphUri, int nodeId) {
-        super(graphUri, nodeId);
+    public EdgeNode(GraphUri graphUri, int nodeId, int definitionId) {
+        super(graphUri, nodeId, definitionId);
     }
 
     @Override

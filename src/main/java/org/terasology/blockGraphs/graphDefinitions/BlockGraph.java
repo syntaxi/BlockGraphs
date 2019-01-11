@@ -70,13 +70,13 @@ public class BlockGraph {
      * @return The new node type
      */
     public GraphNode createNode(BlockUri block) {
-        GraphNode node = new GraphNode(uri, nextId++);
+        GraphNode node = new GraphNode(uri, nextId++, graphType.getDefinitionId(block));
         nodes.put(node.getNodeId(), node);
         return node;
     }
 
     public EdgeNode createEdgeNode(BlockUri block) {
-        EdgeNode node = new EdgeNode(uri, nextId++);
+        EdgeNode node = new EdgeNode(uri, nextId++, graphType.getDefinitionId(block));
         nodes.put(node.getNodeId(), node);
         return node;
     }

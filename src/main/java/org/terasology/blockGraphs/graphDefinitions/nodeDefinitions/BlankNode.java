@@ -29,7 +29,7 @@ public final class BlankNode extends GraphNode {
     public static final BlankNode BLANK_NODE = new BlankNode();
 
     private BlankNode() {
-        super(null, 0);
+        super(null, -1, -1);
     }
 
     public BlockUri getBlockForNode() {
