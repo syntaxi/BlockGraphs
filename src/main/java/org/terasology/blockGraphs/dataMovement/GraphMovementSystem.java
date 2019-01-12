@@ -24,6 +24,7 @@ import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.engine.Time;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.entitySystem.systems.BaseComponentSystem;
+import org.terasology.entitySystem.systems.RegisterMode;
 import org.terasology.entitySystem.systems.RegisterSystem;
 import org.terasology.entitySystem.systems.UpdateSubscriberSystem;
 import org.terasology.math.Side;
@@ -40,7 +41,7 @@ import java.util.SortedMap;
  * We don't use the DelayManager system to avoid polluting that with both small duration requests and large numbers of requests
  */
 @Share(GraphMovementSystem.class)
-@RegisterSystem
+@RegisterSystem(RegisterMode.AUTHORITY)
 public class GraphMovementSystem extends BaseComponentSystem implements UpdateSubscriberSystem {
 
     private SortedMap<Long, EntityRef> delays = Maps.newTreeMap(Ordering.natural());
@@ -63,6 +64,10 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
             /* Process them */
             entitiesToProcess.stream().filter(EntityRef::exists).forEach(this::handlePackage);
         }
+    }
+
+    public long getTime() {
+        return time.getGameTimeInMs();
     }
 
     /**

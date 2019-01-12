@@ -1,9 +1,11 @@
 {
-    "id" : "BlockGraph",
+    "id" : "BlockGraphs",
     "version" : "0.1.0-SNAPSHOT",
     "author" : "",
-    "displayName" : "BlockGraph",
+    "displayName" : "BlockGraphs",
     "description" : "",
-    "dependencies" : [],
+    "dependencies" : [
+        {"id": "ModuleTestingEnvironment","minVersion": "0.1.0"}
+    ],
     "serverSideOnly" : false
 }
