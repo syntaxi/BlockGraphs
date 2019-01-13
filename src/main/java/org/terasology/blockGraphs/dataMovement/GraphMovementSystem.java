@@ -55,14 +55,15 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
 
     @Override
     public void update(float delta) {
-        if (time.getGameTimeInMs() >= delays.firstKey()) {
+        if (!delays.isEmpty() && time.getGameTimeInMs() >= delays.firstKey()) {
             /* Get all entities to process this frame */
             do {
                 entitiesToProcess.add(delays.remove(delays.firstKey()));
-            } while (time.getGameTimeInMs() >= delays.firstKey());
+            } while (!delays.isEmpty() && time.getGameTimeInMs() >= delays.firstKey());
 
             /* Process them */
             entitiesToProcess.stream().filter(EntityRef::exists).forEach(this::handlePackage);
+            entitiesToProcess.clear();
         }
     }
 
@@ -78,12 +79,15 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
      * @param currentNode The definition for the node being added
      */
     public void insertData(GraphNode node, EntityRef data, NodeDefinition currentNode) {
-        Side nextDirection = currentNode.dataEnterNetwork(node, data);
-
         GraphPositionComponent component = new GraphPositionComponent();
         component.currentNode = node.getNodeId();
         component.currentDirection = null;
+        component.graph = node.getGraphUri();
         data.addOrSaveComponent(component);
+
+        /* Initial data processing */
+        currentNode.dataEnterNode(node, data, null);
+        Side nextDirection = currentNode.dataEnterNetwork(node, data);
 
         moveToNode(data, nextDirection, currentNode.holdDataFor(node));
     }
@@ -160,7 +164,7 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
         positionComponent.nextNode = currentNode.getConnectingNodes().get(leavingSide).getNodeId();
         positionComponent.nextDirection = leavingSide.reverse();
 
-        entitiesToProcess.add(holdDuration, data);
+        delays.put(holdDuration + time.getGameTimeInMs(), data);
     }
 
     private void removeFromNetwork(EntityRef data) {

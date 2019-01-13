@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Stores information about a specific graph type
@@ -77,6 +78,10 @@ public class GraphType {
 
     public SimpleUri getUri() {
         return uri;
+    }
+
+    public Set<BlockUri> getAllBlocks() {
+        return blockMapping.keySet();
     }
 }
 

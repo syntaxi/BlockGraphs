@@ -22,12 +22,18 @@ import org.terasology.blockGraphs.graphDefinitions.GraphUri;
 import org.terasology.blockGraphs.graphDefinitions.nodeDefinitions.NodeDefinition;
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.engine.SimpleUri;
+import org.terasology.entitySystem.systems.BaseComponentSystem;
+import org.terasology.entitySystem.systems.RegisterMode;
+import org.terasology.entitySystem.systems.RegisterSystem;
+import org.terasology.registry.Share;
 import org.terasology.world.block.BlockUri;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class BlockGraphManager {
+@Share(BlockGraphManager.class)
+@RegisterSystem(RegisterMode.AUTHORITY)
+public class BlockGraphManager extends BaseComponentSystem {
     private long nextGraphId = 1L;
 
     private Map<SimpleUri, GraphType> graphTypes = new HashMap<>();
@@ -44,14 +50,18 @@ public class BlockGraphManager {
         return graphTypes.getOrDefault(typeUri, null);
     }
 
-    /**
-     * Gets the graph type, from a block that is listed in that graph type.
-     *
-     * @param blockInGraph The URI of the block to check
-     * @return The graph type if it could be found
-     */
     public GraphType getGraphType(BlockUri blockInGraph) {
         return getGraphType(blockToGraph.getOrDefault(blockInGraph, new SimpleUri()));
+    }
+
+    /**
+     * Adds a new graph type to the manager
+     *
+     * @param graphType The graph type to add
+     */
+    public void addGraphType(GraphType graphType) {
+        graphTypes.put(graphType.getUri(), graphType);
+        graphType.getAllBlocks().forEach(blockUri -> blockToGraph.put(blockUri, graphType.getUri()));
     }
 
     /**

@@ -39,7 +39,8 @@ public interface NodeDefinition {
     BlockUri getBlockForNode();
 
     /**
-     * Called when the data enters the node to allow the implementations to modify the data if they wish
+     * Called when the data enters the node to allow the implementations to modify the data if they wish.
+     * This includes when the data initially enters a network. In this case, <code>entry</code> will be null
      * <p>
      * This is called <i>before</i>
      * - {@link #processEdge(EdgeNode, EntityRef, Side)}
