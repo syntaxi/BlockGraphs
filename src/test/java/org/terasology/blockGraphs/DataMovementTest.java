@@ -47,15 +47,11 @@ import static org.junit.Assert.assertTrue;
 
 public class DataMovementTest extends ModuleTestingEnvironment {
     private static final Logger logger = LoggerFactory.getLogger(DataMovementTest.class);
+    private static final BlockUri BLOCK_URI = new BlockUri("BlockGraphs:TestBlock");
 
     private BlockGraph graph;
     private GraphMovementSystem movementSystem;
     private BlockGraphManager graphManager;
-
-
-    private GraphNode nodeOne;
-
-    private static final BlockUri BLOCK_URI = new BlockUri("BlockGraphs:TestBlock");
 
     @Override
     public Set<String> getDependencies() {
@@ -75,19 +71,7 @@ public class DataMovementTest extends ModuleTestingEnvironment {
 
         graphManager.addGraphType(graphType);
         graph = graphManager.newGraphInstance(graphType);
-
-        nodeOne = graph.createNode(BLOCK_URI);
-        GraphNode nodeTwo = graph.createNode(BLOCK_URI);
-        GraphNode nodeThree = graph.createNode(BLOCK_URI);
-        GraphNode nodeFour = graph.createNode(BLOCK_URI);
-
-        nodeOne.linkNode(nodeTwo, Side.TOP);
-        nodeTwo.linkNode(nodeThree, Side.TOP);
-        nodeThree.linkNode(nodeFour, Side.TOP);
-
-
     }
-
 
     @Test
     public void testRegistration() {
@@ -95,19 +79,22 @@ public class DataMovementTest extends ModuleTestingEnvironment {
     }
 
     /**
-     * Tests a simple graph case where the data moves sequentially through a series of nodes
+     * Tests a simple graph case where the data moves sequentially through a series of nodes.
+     * <code>1 -> 2 -> 3 -> 4</code>
      */
     @Test
-    public void testGraphMovement() {
-        /* Build the data */
-        EntityBuilder builder = getHostContext().get(EntityManager.class).newBuilder();
-        builder.setPersistent(true);
-        builder.addComponent(new NodePathTestComponent());
-        EntityRef testData = builder.buildWithoutLifecycleEvents();
+    public void testSimpleGraph() {
+        EntityRef testData = buildData();
+
+        /* Build Graph */
+        GraphNode[] nodes = createNodes(4);
+        nodes[0].linkNode(nodes[1], Side.TOP);
+        nodes[1].linkNode(nodes[2], Side.TOP);
+        nodes[2].linkNode(nodes[3], Side.TOP);
 
         /* Insert & let the data travel through the system */
-        movementSystem.insertData(nodeOne, testData, graphManager.getNodeDefinition(graph.getUri(), nodeOne.getNodeId()));
-        runWhile(() -> testData.hasComponent(GraphPositionComponent.class));
+        movementSystem.insertData(nodes[0], testData, graphManager.getNodeDefinition(graph.getUri(), nodes[0].getNodeId()));
+        runUntil(() -> testData.getComponent(NodePathTestComponent.class).isFinished);
 
         /* Test the path travelled */
         List<Integer> dataPath = testData.getComponent(NodePathTestComponent.class).nodePath;
@@ -115,4 +102,36 @@ public class DataMovementTest extends ModuleTestingEnvironment {
         assertThat(dataPath, is(expectedPath));
         assertTrue(!testData.hasComponent(GraphPositionComponent.class));
     }
+
+    @Test
+    public void testBranchedGraph() {
+        
+    }
+
+    /**
+     * Creates a bunch of nodes for
+     *
+     * @param count The number of nodes
+     * @return An array of new nodes
+     */
+    private GraphNode[] createNodes(int count) {
+        GraphNode[] nodes = new GraphNode[count];
+        for (int i = 0; i < count; i++) {
+            nodes[i] = graph.createNode(BLOCK_URI);
+        }
+        return nodes;
+    }
+
+    /**
+     * Builds an entity data packet, already with appropriate components and values set
+     *
+     * @return A data packet to be passed around the graphs
+     */
+    private EntityRef buildData() {
+        EntityBuilder builder = getHostContext().get(EntityManager.class).newBuilder();
+        builder.setPersistent(true);
+        builder.addComponent(new NodePathTestComponent());
+        return builder.buildWithoutLifecycleEvents();
+    }
+
 }

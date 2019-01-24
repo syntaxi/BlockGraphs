@@ -22,4 +22,5 @@ import java.util.List;
 
 public class NodePathTestComponent implements Component {
     public List<Integer> nodePath = new ArrayList<>();
+    public boolean isFinished = false;
 }

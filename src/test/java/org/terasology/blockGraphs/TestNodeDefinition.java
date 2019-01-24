@@ -49,6 +49,8 @@ public class TestNodeDefinition implements NodeDefinition {
 
     @Override
     public boolean processTerminus(GraphNode node, EntityRef data) {
+        NodePathTestComponent component = data.getComponent(NodePathTestComponent.class);
+        component.isFinished = true;
         return true;
     }
 }
