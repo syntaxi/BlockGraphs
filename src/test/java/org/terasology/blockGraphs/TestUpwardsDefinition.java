@@ -15,16 +15,18 @@
  */
 package org.terasology.blockGraphs;
 
-import org.terasology.blockGraphs.dataMovement.EdgeMovementOptions;
 import org.terasology.blockGraphs.dataMovement.GraphPositionComponent;
 import org.terasology.blockGraphs.graphDefinitions.nodeDefinitions.NodeDefinition;
 import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeSide;
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.TerminusNode;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
 import org.terasology.world.block.BlockUri;
 
-public class TestNodeDefinition implements NodeDefinition {
+public class TestUpwardsDefinition implements NodeDefinition {
 
     @Override
     public BlockUri getBlockForNode() {
@@ -38,17 +40,23 @@ public class TestNodeDefinition implements NodeDefinition {
     }
 
     @Override
-    public Side processJunction(GraphNode node, EntityRef data, Side entry) {
-        return Side.TOP;
+    public Side processJunction(JunctionNode node, EntityRef data, Side entry) {
+        if (node.nodes.containsKey(Side.TOP)) {
+            return Side.TOP;
+        } else {
+            NodePathTestComponent component = data.getComponent(NodePathTestComponent.class);
+            component.isFinished = true;
+            return null;
+        }
     }
 
     @Override
-    public EdgeMovementOptions processEdge(EdgeNode node, EntityRef data, Side entry) {
-        return EdgeMovementOptions.OTHER;
+    public EdgeSide processEdge(EdgeNode node, EntityRef data, EdgeSide entry) {
+        return entry.getOpposite();
     }
 
     @Override
-    public boolean processTerminus(GraphNode node, EntityRef data) {
+    public boolean processTerminus(TerminusNode node, EntityRef data) {
         NodePathTestComponent component = data.getComponent(NodePathTestComponent.class);
         component.isFinished = true;
         return true;
