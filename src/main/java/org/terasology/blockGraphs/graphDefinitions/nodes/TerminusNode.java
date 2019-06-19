@@ -48,7 +48,7 @@ public class TerminusNode extends GraphNode {
     }
 
 
-    public void linkNode(Side onSide, GraphNode node) {
+    public void linkNode(GraphNode node, Side onSide) {
         connectionNode = node;
         connectionSide = onSide;
     }

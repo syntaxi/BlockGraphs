@@ -104,10 +104,12 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
      */
     public void insertData(GraphNode node, EntityRef data) {
         GraphPositionComponent component = new GraphPositionComponent();
-        component.currentNode = node.nodeId;
-        component.nextNode = -1;
-        component.currentDirection = null;
         component.graph = node.graphUri;
+        component.isEntering = true;
+        component.currentNode = node.nodeId;
+        component.currentDirection = null;
+        component.nextNode = -1;
+        component.nextDirection = null;
         data.addOrSaveComponent(component);
 
         /* Begin moving in network */
@@ -124,6 +126,7 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
         component.currentNode = component.nextNode;
         component.currentDirection = component.nextDirection;
         component.nextDirection = null;
+        component.isEntering = false;
         component.nextNode = -1;
     }
 

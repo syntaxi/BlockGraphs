@@ -42,6 +42,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+import static org.hamcrest.core.AnyOf.anyOf;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -49,7 +50,6 @@ import static org.junit.Assert.assertTrue;
 
 public class DataMovementTest extends ModuleTestingEnvironment {
     private static final Logger logger = LoggerFactory.getLogger(DataMovementTest.class);
-    private static final BlockUri BLOCK_URI = new BlockUri("BlockGraphs:TestBlock");
 
     private BlockGraph graph;
     private GraphMovementSystem movementSystem;
@@ -70,6 +70,7 @@ public class DataMovementTest extends ModuleTestingEnvironment {
 
         GraphType graphType = new GraphType(new SimpleUri("BlockGraphs:TestGraph"));
         graphType.addNodeType(new TestUpwardsDefinition());
+        graphType.addNodeType(new TestRandomDefinition());
 
         graphManager.addGraphType(graphType);
         graph = graphManager.newGraphInstance(graphType);
@@ -92,16 +93,18 @@ public class DataMovementTest extends ModuleTestingEnvironment {
         EntityRef testData = buildData();
 
         /* Build Graph */
-        JunctionNode[] nodes = createJunctions(4);
-        nodes[0].linkNode(nodes[1], Side.TOP); // 0 → 1
+        TerminusNode[] terminusNodes = createTerminus(2, TestUpwardsDefinition.BLOCK_URI);
+        JunctionNode[] nodes = createJunctions(2, TestUpwardsDefinition.BLOCK_URI);
 
-        nodes[1].linkNode(nodes[0], Side.BOTTOM); // 1 → 0
-        nodes[1].linkNode(nodes[3], Side.TOP); // 1 → 3
+        terminusNodes[0].linkNode(nodes[0], Side.TOP);
 
-        nodes[3].linkNode(nodes[1], Side.BOTTOM); // 3 → 1
-        nodes[3].linkNode(nodes[2], Side.TOP); // 3 → 2
+        nodes[0].linkNode(terminusNodes[0], Side.BOTTOM);
+        nodes[0].linkNode(nodes[1], Side.TOP);
 
-        nodes[2].linkNode(nodes[3], Side.BOTTOM); // 2 → 3
+        nodes[1].linkNode(nodes[0], Side.BOTTOM);
+        nodes[1].linkNode(terminusNodes[1], Side.TOP);
+
+        terminusNodes[1].linkNode(nodes[1], Side.BOTTOM);
 
         /* Insert & let the data travel through the system */
         movementSystem.insertData(nodes[0], testData);
@@ -109,7 +112,12 @@ public class DataMovementTest extends ModuleTestingEnvironment {
 
         /* Test the path travelled */
         List<Integer> dataPath = testData.getComponent(NodePathTestComponent.class).nodePath;
-        List<Integer> expectedPath = Arrays.asList(1, 3, 2, 4); //Order nodes are created is tweaked
+        List<Integer> expectedPath = Arrays.asList(
+                terminusNodes[0].nodeId,
+                nodes[0].nodeId,
+                nodes[1].nodeId,
+                terminusNodes[0].nodeId);
+
         assertThat(dataPath, is(expectedPath));
         assertTrue(!testData.hasComponent(GraphPositionComponent.class));
     }
@@ -124,8 +132,8 @@ public class DataMovementTest extends ModuleTestingEnvironment {
         EntityRef testData = buildData();
 
         /* Build Graph */
-        JunctionNode[] nodes = createJunctions(2);
-        EdgeNode edgeNode = graph.createEdgeNode(BLOCK_URI);
+        TerminusNode[] nodes = createTerminus(2, TestUpwardsDefinition.BLOCK_URI);
+        EdgeNode edgeNode = graph.createEdgeNode(TestUpwardsDefinition.BLOCK_URI);
 
         /* Always link from the edge node */
         nodes[0].linkNode(edgeNode, Side.TOP);
@@ -139,36 +147,106 @@ public class DataMovementTest extends ModuleTestingEnvironment {
 
         /* Test the path travelled */
         List<Integer> dataPath = testData.getComponent(NodePathTestComponent.class).nodePath;
-        List<Integer> expectedPath = Arrays.asList(1, 3, 2); // Edge node is created after the other two
+        List<Integer> expectedPath = Arrays.asList(
+                nodes[0].nodeId,
+                edgeNode.nodeId,
+                nodes[1].nodeId); // Edge node is created after the other two
         assertThat(dataPath, is(expectedPath));
         assertTrue(!testData.hasComponent(GraphPositionComponent.class));
     }
 
+    /**
+     * Tests a graph with a single choice
+     * Consists of three junctions, three edges and one
+     *
+     * <code>               ↱ [..5..] → 2 </code>
+     * <code> 1 → [..4..] → 7             </code>
+     * <code                ↳ [..6..] → 3 </code>
+     * <p>
+     * This leads to 3 options for path
+     * <code>1 → 4 → 7 → 4 → 1</code>
+     * <code>1 → 4 → 7 → 5 → 2</code>
+     * <code>1 → 4 → 7 → 6 → 3</code>
+     */
     @Test
     public void testBranchedGraph() {
+        EntityRef testData = buildData();
+        TerminusNode[] terminusNodes = createTerminus(3, TestRandomDefinition.BLOCK_URI);
+        EdgeNode[] edgeNodes = createEdges(3, TestRandomDefinition.BLOCK_URI);
+        JunctionNode junctionNode = createJunctions(1, TestRandomDefinition.BLOCK_URI)[0];
 
+        /* Make the graph */
+        terminusNodes[0].linkNode(edgeNodes[0], Side.TOP);
+        edgeNodes[0].linkNode(terminusNodes[0], Side.BACK, Side.BOTTOM);
+        edgeNodes[0].linkNode(junctionNode, Side.FRONT, Side.TOP);
+        junctionNode.linkNode(edgeNodes[0], Side.BOTTOM);
+
+        junctionNode.linkNode(edgeNodes[1], Side.LEFT);
+        edgeNodes[1].linkNode(junctionNode, Side.BACK, Side.RIGHT);
+        edgeNodes[1].linkNode(terminusNodes[1], Side.FRONT, Side.TOP);
+        terminusNodes[1].linkNode(edgeNodes[1], Side.BOTTOM);
+
+        junctionNode.linkNode(edgeNodes[2], Side.RIGHT);
+        edgeNodes[2].linkNode(junctionNode, Side.BACK, Side.LEFT);
+        edgeNodes[2].linkNode(terminusNodes[2], Side.FRONT, Side.TOP);
+        terminusNodes[2].linkNode(edgeNodes[2], Side.BOTTOM);
+
+        /* Insert & let the data travel through the system */
+        movementSystem.insertData(terminusNodes[0], testData);
+        runUntil(() -> testData.getComponent(NodePathTestComponent.class).isFinished);
+
+
+
+        /* Test the path travelled */
+        List<Integer> dataPath = testData.getComponent(NodePathTestComponent.class).nodePath;
+        List<List<Integer>> expectedPaths = Arrays.asList(
+                Arrays.asList(
+                        terminusNodes[0].nodeId,
+                        edgeNodes[0].nodeId,
+                        junctionNode.nodeId,
+                        edgeNodes[0].nodeId,
+                        terminusNodes[0].nodeId),
+                Arrays.asList(
+                        terminusNodes[0].nodeId,
+                        edgeNodes[0].nodeId,
+                        junctionNode.nodeId,
+                        edgeNodes[1].nodeId,
+                        terminusNodes[1].nodeId),
+                Arrays.asList(
+                        terminusNodes[0].nodeId,
+                        edgeNodes[0].nodeId,
+                        junctionNode.nodeId,
+                        edgeNodes[2].nodeId,
+                        terminusNodes[2].nodeId)
+        );
+        assertThat(dataPath, anyOf(
+                is(expectedPaths.get(0)),
+                is(expectedPaths.get(1)),
+                is(expectedPaths.get(2))
+        ));
+        assertTrue(!testData.hasComponent(GraphPositionComponent.class));
     }
 
-    private JunctionNode[] createJunctions(int count) {
+    private JunctionNode[] createJunctions(int count, BlockUri block) {
         JunctionNode[] nodes = new JunctionNode[count];
         for (int i = 0; i < count; i++) {
-            nodes[i] = graph.createJunctionNode(BLOCK_URI); //This is fine
+            nodes[i] = graph.createJunctionNode(block); //This is fine
         }
         return nodes;
     }
 
-    private TerminusNode[] createTerminus(int count) {
+    private TerminusNode[] createTerminus(int count, BlockUri block) {
         TerminusNode[] nodes = new TerminusNode[count];
         for (int i = 0; i < count; i++) {
-            nodes[i] = graph.createTerminusNode(BLOCK_URI); //This is fine
+            nodes[i] = graph.createTerminusNode(block); //This is fine
         }
         return nodes;
     }
 
-    private EdgeNode[] createEdges(int count) {
+    private EdgeNode[] createEdges(int count, BlockUri block) {
         EdgeNode[] nodes = new EdgeNode[count];
         for (int i = 0; i < count; i++) {
-            nodes[i] = graph.createEdgeNode(BLOCK_URI); //This is fine
+            nodes[i] = graph.createEdgeNode(block); //This is fine
         }
         return nodes;
 

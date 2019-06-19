@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 MovingBlocks
+ * Copyright 2019 MovingBlocks
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,16 @@
  */
 package org.terasology.blockGraphs;
 
-import org.terasology.blockGraphs.dataMovement.GraphPositionComponent;
-import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
+import org.terasology.utilities.random.FastRandom;
 import org.terasology.world.block.BlockUri;
 
-public class TestUpwardsDefinition extends TestDefinition {
-    public static final BlockUri BLOCK_URI = new BlockUri("BlockGraphs:TestUpwardsBlock");
+import java.util.ArrayList;
+
+public class TestRandomDefinition extends TestDefinition {
+    public static final BlockUri BLOCK_URI = new BlockUri("BlockGraphs:TestRandomBlock");
 
     @Override
     public BlockUri getBlockForNode() {
@@ -32,6 +33,7 @@ public class TestUpwardsDefinition extends TestDefinition {
 
     @Override
     public Side processJunction(JunctionNode node, EntityRef data, Side entry) {
-        return Side.TOP;
+        return new FastRandom().nextItem(new ArrayList<>(node.nodes.keySet()));
     }
+
 }

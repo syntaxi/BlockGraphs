@@ -29,7 +29,7 @@ public class GraphPositionComponent implements Component {
     /**
      * The node to move this data into
      */
-    public int nextNode;
+    public int nextNode = -1;
     /**
      * The side this data will enter by
      */
@@ -38,10 +38,15 @@ public class GraphPositionComponent implements Component {
     /**
      * The node this data is currently in
      */
-    public int currentNode;
+    public int currentNode = -1;
     /**
      * The direction this data entered the node by
      */
     public Side currentDirection;
+
+    /**
+     * True on the iteration when the data has just entered the network, false otherwise
+     */
+    public boolean isEntering;
 
 }
