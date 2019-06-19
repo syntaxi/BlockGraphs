@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 MovingBlocks
+ * Copyright 2019 MovingBlocks
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,42 +20,24 @@ import org.terasology.blockGraphs.graphDefinitions.GraphUri;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Collection;
 
-/**
- * The base class for all Graph Nodes.
- * Handles some basic things like calling different sub methods depending on which "mode" the node is in
- * <p>
- * Should be extended to provide specific node types
- *
- * @see BaseJunctionNode
- */
-public class GraphNode {
-
-    /**
-     * All the nodes attached to this one, and what side they physically are on
-     */
-    protected Map<Side, GraphNode> nodes = new HashMap<>(6);
-    /**
-     * The position of this node in the world
-     */
-    protected Vector3i worldPos;
+public abstract class GraphNode {
 
     /**
      * The id of this node in it's {@link BlockGraph} instance
      */
-    private int nodeId;
+    public int nodeId;
 
     /**
      * The URI of the graph this node belongs to
      */
-    private GraphUri graphUri;
+    public GraphUri graphUri;
 
     /**
      * The ID of the definition this node is linked to
      */
-    private int definitionId;
+    public int definitionId;
 
     public GraphNode(GraphUri graphUri, int nodeId, int definitionId) {
         this.graphUri = graphUri;
@@ -63,71 +45,43 @@ public class GraphNode {
         this.definitionId = definitionId;
     }
 
-    public Map<Side, GraphNode> getConnectingNodes() {
-        return nodes;
-    }
+    public abstract NodeType getNodeType();
 
-    public boolean isTerminus() {
-        return nodes.size() == 1;
-    }
-
-    public Vector3i getWorldPos() {
-        return worldPos;
-    }
-
-    public void setWorldPos(Vector3i worldPos) {
-        this.worldPos = worldPos;
-    }
-
-    public int getNodeId() {
-        return nodeId;
-    }
-
-    public GraphUri getGraphUri() {
-        return graphUri;
-    }
-
-    public int getDefinitionId() {
-        return definitionId;
-    }
 
     /**
-     * Links this node with another.
-     * Duplicates the link both ways.
-     * This does not respect any existing connection via that side
+     * Gets the side that posTwo is in relation two posOne
+     * <p>
+     * This side will be in relation to posOne
+     * eg,
+     * <0, 0, 0> & <1, 0, 0> will give RIGHT
      *
-     * @param otherNode The other node to link to
+     * @param posOne The pos in relation to
+     * @param posTwo The pos to find the side for
+     * @return The side from posOne to posTwo
      */
-    public void linkNode(GraphNode otherNode, Side nodeSide) {
-        nodes.put(nodeSide, otherNode);
-        otherNode.nodes.put(nodeSide.reverse(), this);
-    }
-
-    public void linkNode(GraphNode otherNode) {
-        /* Yes this is ugly, but it's better than making a bunch of new vectors */
-        linkNode(otherNode, Side.inDirection(
-                otherNode.worldPos.x - worldPos.x,
-                otherNode.worldPos.y - worldPos.y,
-                otherNode.worldPos.z - worldPos.z));
+    public Side getSideBetween(Vector3i posOne, Vector3i posTwo) {
+        return Side.inDirection(
+                posTwo.x - posOne.x,
+                posTwo.y - posOne.y,
+                posTwo.z - posOne.z);
     }
 
     /**
-     * Unlinks this node with the node on the specific side.
-     * Ensures that the connection is removed on both this node and the adjacent one.
+     * Removes all connections this node has.
+     * Does not break the other side of the the link
+     */
+    public abstract void unlinkAll();
+
+    /**
+     * Unlink this node and another.
+     * Does not replicate.
+     * TODO: Check if unlinking should be replicated to other nodes. This would be a good idea if it is always done
      *
-     * @param side The side to unlink
+     * @param node The node to unlink
      */
-    public void unlinkNode(Side side) {
-        nodes.get(side).nodes.remove(side.reverse());
-        nodes.remove(side);
-    }
+    public abstract void unlinkNode(GraphNode node);
 
-    /**
-     * Unlink this node from all connections
-     */
-    public void unlinkAll() {
-        for (Side side : nodes.keySet()) {
-            unlinkNode(side);
-        }
-    }
+    public abstract Collection<GraphNode> getConnections();
+
+    public abstract Side getSideForNode(GraphNode node);
 }

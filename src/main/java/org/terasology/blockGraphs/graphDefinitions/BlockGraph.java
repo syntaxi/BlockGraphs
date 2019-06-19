@@ -17,9 +17,11 @@ package org.terasology.blockGraphs.graphDefinitions;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.terasology.blockGraphs.graphDefinitions.nodeDefinitions.BlankNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.NodeType;
+import org.terasology.blockGraphs.graphDefinitions.nodes.TerminusNode;
 import org.terasology.world.block.BlockUri;
 
 import java.util.HashMap;
@@ -27,7 +29,7 @@ import java.util.Map;
 
 /**
  * Represents an instance of a block graph.
- * All block graphs use this class, but have differing {@link GraphNode} implementations
+ * All block graphs use this class, but have differing {@link JunctionNode} implementations
  */
 public class BlockGraph {
     private static final Logger logger = LoggerFactory.getLogger(BlockGraph.class);
@@ -41,15 +43,14 @@ public class BlockGraph {
     public BlockGraph(GraphType graphType, GraphUri uri) {
         this.graphType = graphType;
         this.uri = uri;
-        nodes.put(0, BlankNode.BLANK_NODE);
     }
 
     public GraphNode getNode(int id) {
         return nodes.get(id);
     }
 
-    public EdgeNode getEdgeNode(int id) {
-        return (EdgeNode) getNode(id);
+    public <T extends GraphNode> T getNodeAsType(int id) {
+        return (T) getNode(id);
     }
 
     public GraphUri getUri() {
@@ -60,25 +61,50 @@ public class BlockGraph {
         return graphType;
     }
 
+
     /**
      * Creates a new node for the given block.
      * <p>
      * Will fail if there is no node type linked to the block or the node type could not be instantiated.
-     * In the latter case, a {@link BlankNode} implementation is returned
      *
      * @param block The block to create a node for
      * @return The new node type
      */
-    public GraphNode createNode(BlockUri block) {
-        GraphNode node = new GraphNode(uri, nextId++, graphType.getDefinitionId(block));
-        nodes.put(node.getNodeId(), node);
+    public JunctionNode createJunctionNode(BlockUri block) {
+        JunctionNode node = new JunctionNode(uri, nextId++, graphType.getDefinitionId(block));
+        nodes.put(node.nodeId, node);
         return node;
     }
 
+    /**
+     * @see #createJunctionNode(BlockUri)
+     */
     public EdgeNode createEdgeNode(BlockUri block) {
         EdgeNode node = new EdgeNode(uri, nextId++, graphType.getDefinitionId(block));
-        nodes.put(node.getNodeId(), node);
+        nodes.put(node.nodeId, node);
         return node;
+    }
+
+    /**
+     * @see #createJunctionNode(BlockUri)
+     */
+    public TerminusNode createTerminusNode(BlockUri block) {
+        TerminusNode node = new TerminusNode(uri, nextId++, graphType.getDefinitionId(block));
+        nodes.put(node.nodeId, node);
+        return node;
+    }
+
+    public GraphNode createNode(BlockUri block, NodeType type) {
+        switch (type) {
+            case JUNCTION:
+                return createJunctionNode(block);
+            case EDGE:
+                return createEdgeNode(block);
+            case TERMINUS:
+                return createTerminusNode(block);
+            default:
+                return null;
+        }
     }
 
     /**
@@ -87,7 +113,11 @@ public class BlockGraph {
      * @param node The node to remove
      */
     public void removeNode(GraphNode node) {
+        /* Remove all connections into this node */
+        node.getConnections().forEach(node::unlinkNode);
+        /* Remove all connections out of this node */
         node.unlinkAll();
-        nodes.remove(node.getNodeId());
+        /* Remove the node */
+        nodes.remove(node.nodeId);
     }
 }

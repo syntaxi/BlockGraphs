@@ -15,9 +15,11 @@
  */
 package org.terasology.blockGraphs.graphDefinitions.nodeDefinitions;
 
-import org.terasology.blockGraphs.dataMovement.EdgeMovementOptions;
 import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeSide;
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.TerminusNode;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
 import org.terasology.world.block.BlockUri;
@@ -43,27 +45,15 @@ public interface NodeDefinition {
      * This includes when the data initially enters a network. In this case, <code>entry</code> will be null
      * <p>
      * This is called <i>before</i>
-     * - {@link #processEdge(EdgeNode, EntityRef, Side)}
-     * - {@link #processTerminus(GraphNode, EntityRef)}
-     * - or {@link #processJunction(GraphNode, EntityRef, Side)}
+     * - {@link #processEdge(EdgeNode, EntityRef, EdgeSide)}
+     * - {@link #processTerminus(TerminusNode, EntityRef)}
+     * - or {@link #processJunction(JunctionNode, EntityRef, Side)}
      *
      * @param node  The node being processed
      * @param data  The data entering
      * @param entry The side the data has entered by
      */
     default void dataEnterNode(GraphNode node, EntityRef data, Side entry) {
-    }
-
-    /**
-     * Called when the data is initially inserted into the network via this node
-     * Should determine which side the data should leave by
-     *
-     * @param node The node being processed
-     * @param data The data being entered
-     * @return The side the data should leave by or null if the data should leave the network
-     */
-    default Side dataEnterNetwork(GraphNode node, EntityRef data) {
-        return processJunction(node, data, null);
     }
 
     /**
@@ -76,7 +66,7 @@ public interface NodeDefinition {
      * @param entry The side the data entered via
      * @return The side the data should leave by or null if the data should leave the network
      */
-    Side processJunction(GraphNode node, EntityRef data, Side entry);
+    Side processJunction(JunctionNode node, EntityRef data, Side entry);
 
     /**
      * Returns which side the data should leave from.
@@ -89,10 +79,11 @@ public interface NodeDefinition {
      * @param entry The end of the node entered by. Either FRONT or BACK
      * @return The side to leave by
      */
-    EdgeMovementOptions processEdge(EdgeNode node, EntityRef data, Side entry);
+    EdgeSide processEdge(EdgeNode node, EntityRef data, EdgeSide entry);
 
     /**
-     * Processes the case where the data has just entered a junction node.
+     * Returns if the data should exit the network or bounce back the way it came
+     * Only applies if the ndoe is in terminus format
      * <p>
      * This is called <i>after</i> {@link #dataEnterNode(GraphNode, EntityRef, Side)}
      *
@@ -100,6 +91,6 @@ public interface NodeDefinition {
      * @param data The data being moved
      * @return True if the data should leave and false if the data should leave the way it entered
      */
-    boolean processTerminus(GraphNode node, EntityRef data);
+    boolean processTerminus(TerminusNode node, EntityRef data);
 
 }
