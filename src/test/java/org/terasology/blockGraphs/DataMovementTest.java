@@ -227,6 +227,41 @@ public class DataMovementTest extends ModuleTestingEnvironment {
         assertTrue(!testData.hasComponent(GraphPositionComponent.class));
     }
 
+    /**
+     * Tests a graph made of two different types of nodes
+     * Still a simple graph of an edge, junction and two terminus
+     *
+     * 1A -> 2B -> 3A
+     */
+    @Test
+    public void testMultipleNodeTypes() {
+        EntityRef testData = buildData();
+        TerminusNode[] terminusNodes = createTerminus(2, TestUpwardsDefinition.BLOCK_URI);
+        EdgeNode edgeNode = createEdges(1, TestRandomDefinition.BLOCK_URI)[0];
+        JunctionNode junctionNode = createJunctions(1, TestUpwardsDefinition.BLOCK_URI)[0];
+
+        terminusNodes[0].linkNode(edgeNode, Side.LEFT);
+        edgeNode.linkNode(terminusNodes[0], Side.FRONT, Side.RIGHT);
+        edgeNode.linkNode(junctionNode, Side.BACK, Side.FRONT);
+        junctionNode.linkNode(edgeNode, Side.BACK);
+        junctionNode.linkNode(terminusNodes[1], Side.TOP);
+        terminusNodes[1].linkNode(junctionNode, Side.BOTTOM);
+
+        /* Insert & let the data travel through the system */
+        movementSystem.insertData(terminusNodes[0], testData);
+        runUntil(() -> testData.getComponent(NodePathTestComponent.class).isFinished);
+
+        /* Test the path travelled */
+        List<Integer> dataPath = testData.getComponent(NodePathTestComponent.class).nodePath;
+        List<Integer> expectedPath = Arrays.asList(
+                terminusNodes[0].nodeId,
+                edgeNode.nodeId,
+                junctionNode.nodeId,
+                terminusNodes[1].nodeId);
+        assertThat(dataPath, is(expectedPath));
+        assertTrue(!testData.hasComponent(GraphPositionComponent.class));
+    }
+
     private JunctionNode[] createJunctions(int count, BlockUri block) {
         JunctionNode[] nodes = new JunctionNode[count];
         for (int i = 0; i < count; i++) {
