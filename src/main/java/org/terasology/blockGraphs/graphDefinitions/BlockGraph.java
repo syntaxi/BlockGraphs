@@ -25,7 +25,9 @@ import org.terasology.blockGraphs.graphDefinitions.nodes.TerminusNode;
 import org.terasology.world.block.BlockUri;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents an instance of a block graph.
@@ -45,8 +47,16 @@ public class BlockGraph {
         this.uri = uri;
     }
 
+    public int getNodeCount() {
+        return nodes.size();
+    }
+
     public GraphNode getNode(int id) {
         return nodes.get(id);
+    }
+
+    public Set<Integer> getNodeIds() {
+        return nodes.keySet();
     }
 
     public <T extends GraphNode> T getNodeAsType(int id) {
@@ -71,7 +81,11 @@ public class BlockGraph {
      * @return The new node type
      */
     public JunctionNode createJunctionNode(BlockUri block) {
-        JunctionNode node = new JunctionNode(uri, nextId++, graphType.getDefinitionId(block));
+        return createJunctionNode(graphType.getDefinitionId(block));
+    }
+
+    public JunctionNode createJunctionNode(int definition) {
+        JunctionNode node = new JunctionNode(uri, nextId++, definition);
         nodes.put(node.nodeId, node);
         return node;
     }
@@ -80,7 +94,11 @@ public class BlockGraph {
      * @see #createJunctionNode(BlockUri)
      */
     public EdgeNode createEdgeNode(BlockUri block) {
-        EdgeNode node = new EdgeNode(uri, nextId++, graphType.getDefinitionId(block));
+        return createEdgeNode(graphType.getDefinitionId(block));
+    }
+
+    public EdgeNode createEdgeNode(int definition) {
+        EdgeNode node = new EdgeNode(uri, nextId++, definition);
         nodes.put(node.nodeId, node);
         return node;
     }
@@ -89,7 +107,11 @@ public class BlockGraph {
      * @see #createJunctionNode(BlockUri)
      */
     public TerminusNode createTerminusNode(BlockUri block) {
-        TerminusNode node = new TerminusNode(uri, nextId++, graphType.getDefinitionId(block));
+        return createTerminusNode(graphType.getDefinitionId(block));
+    }
+
+    public TerminusNode createTerminusNode(int definition) {
+        TerminusNode node = new TerminusNode(uri, nextId++, definition);
         nodes.put(node.nodeId, node);
         return node;
     }
@@ -119,5 +141,6 @@ public class BlockGraph {
         node.unlinkAll();
         /* Remove the node */
         nodes.remove(node.nodeId);
+        node.nodeId = -1;
     }
 }
