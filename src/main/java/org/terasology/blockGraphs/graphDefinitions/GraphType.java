@@ -17,7 +17,6 @@ package org.terasology.blockGraphs.graphDefinitions;
 
 import org.terasology.blockGraphs.graphDefinitions.nodeDefinitions.NodeDefinition;
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
-import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
 import org.terasology.engine.SimpleUri;
 import org.terasology.world.block.BlockUri;
 
@@ -40,6 +39,7 @@ public class GraphType {
 
     public GraphType(SimpleUri uri) {
         this.uri = uri;
+        nodeDefinitions.add(null);
     }
 
     /**
@@ -62,7 +62,7 @@ public class GraphType {
      * @return The class for that node, or null if there is none
      */
     public NodeDefinition getDefinition(BlockUri block) {
-        return nodeDefinitions.get(blockMapping.get(block));
+        return nodeDefinitions.get(blockMapping.getOrDefault(block, 0));
     }
 
     public NodeDefinition getDefinition(GraphNode node) {
