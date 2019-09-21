@@ -59,7 +59,7 @@ public abstract class GraphNode {
      * @param posTwo The pos to find the side for
      * @return The side from posOne to posTwo
      */
-    public Side getSideBetween(Vector3i posOne, Vector3i posTwo) {
+    public static Side getSideBetween(Vector3i posOne, Vector3i posTwo) {
         return Side.inDirection(
                 posTwo.x - posOne.x,
                 posTwo.y - posOne.y,
