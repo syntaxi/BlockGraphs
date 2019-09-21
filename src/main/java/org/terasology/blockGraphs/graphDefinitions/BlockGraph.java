@@ -136,7 +136,7 @@ public class BlockGraph {
      */
     public void removeNode(GraphNode node) {
         /* Remove all connections into this node */
-        node.getConnections().forEach(node::unlinkNode);
+        node.getConnections().forEach(linked -> linked.unlinkNode(node));
         /* Remove all connections out of this node */
         node.unlinkAll();
         /* Remove the node */
