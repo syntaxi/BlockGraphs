@@ -15,12 +15,10 @@
  */
 package org.terasology.blockGraphs;
 
-import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.terasology.blockGraphs.dataMovement.GraphMovementSystem;
 import org.terasology.blockGraphs.dataMovement.GraphPositionComponent;
 import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
 import org.terasology.blockGraphs.graphDefinitions.GraphType;
@@ -28,19 +26,12 @@ import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.TerminusNode;
 import org.terasology.engine.SimpleUri;
-import org.terasology.entitySystem.entity.EntityBuilder;
-import org.terasology.entitySystem.entity.EntityManager;
 import org.terasology.entitySystem.entity.EntityRef;
-import org.terasology.entitySystem.entity.internal.EngineEntityManager;
 import org.terasology.math.Side;
-import org.terasology.moduletestingenvironment.ModuleTestingEnvironment;
-import org.terasology.network.NetworkSystem;
-import org.terasology.network.internal.NetworkSystemImpl;
 import org.terasology.world.block.BlockUri;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 import static org.hamcrest.core.AnyOf.anyOf;
 import static org.hamcrest.core.Is.is;
@@ -48,31 +39,19 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-public class DataMovementTest extends ModuleTestingEnvironment {
+public class DataMovementTest extends GraphTesting {
     private static final Logger logger = LoggerFactory.getLogger(DataMovementTest.class);
 
     private BlockGraph graph;
-    private GraphMovementSystem movementSystem;
-    private BlockGraphManager graphManager;
-
-    @Override
-    public Set<String> getDependencies() {
-        return Sets.newHashSet("BlockGraphs");
-    }
 
     @Before
     public void initialize() {
-        movementSystem = getHostContext().get(GraphMovementSystem.class);
-        graphManager = getHostContext().get(BlockGraphManager.class);
-
-        /* Stops NPEs when adding a component to an entity (and possibly other related methods) */
-        ((EngineEntityManager) getHostContext().get(EntityManager.class)).unsubscribe((NetworkSystemImpl) getHostContext().get(NetworkSystem.class));
+        super.initialize();
 
         GraphType graphType = new GraphType(new SimpleUri("BlockGraphs:TestGraph"));
         graphType.addNodeType(new TestUpwardsDefinition());
         graphType.addNodeType(new TestRandomDefinition());
 
-        graphManager.addGraphType(graphType);
         graph = graphManager.newGraphInstance(graphType);
     }
 
@@ -230,7 +209,7 @@ public class DataMovementTest extends ModuleTestingEnvironment {
     /**
      * Tests a graph made of two different types of nodes
      * Still a simple graph of an edge, junction and two terminus
-     *
+     * <p>
      * 1A -> 2B -> 3A
      */
     @Test
@@ -287,17 +266,5 @@ public class DataMovementTest extends ModuleTestingEnvironment {
 
     }
 
-
-    /**
-     * Builds an entity data packet, already with appropriate components and values set
-     *
-     * @return A data packet to be passed around the graphs
-     */
-    private EntityRef buildData() {
-        EntityBuilder builder = getHostContext().get(EntityManager.class).newBuilder();
-        builder.setPersistent(true);
-        builder.addComponent(new NodePathTestComponent());
-        return builder.buildWithoutLifecycleEvents();
-    }
 
 }
