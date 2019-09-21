@@ -15,8 +15,6 @@
  */
 package org.terasology.blockGraphs;
 
-import org.terasology.blockGraphs.dataMovement.GraphPositionComponent;
-import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
