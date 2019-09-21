@@ -16,8 +16,8 @@
 package org.terasology.blockGraphs.graphDefinitions.nodes;
 
 public enum NodeType {
-    EDGE,
     TERMINUS,
+    EDGE,
     JUNCTION,
     BLANK
 }

@@ -32,7 +32,7 @@ public class GraphUri implements Uri {
     private final SimpleUri graphUri;
     private final Long instanceNo;
 
-
+    //TODO: make private to ensure all instances are unique
     public GraphUri(SimpleUri graphUri, Long instanceNo) {
         this.graphUri = graphUri;
         this.instanceNo = instanceNo;
