@@ -314,7 +314,7 @@ public class GraphConstructionTests extends GraphTesting {
 
         graphConstructor.crunchGraph(graph);
         assertEquals(graph.getNodeCount(), 6); // Has the right number of nodes
-        assertThat(getNodeAt(points.get(3), graph), is(getNodeAt(points.get(6), graph))); // All blocks point to the same edge
+        assertNotSame(getNodeAt(points.get(3), graph), getNodeAt(points.get(6), graph)); // Blocks either side of the junction are not the same
 
         TerminusNode front = (TerminusNode) getNodeAt(points.get(0), graph);
         EdgeNode neck = (EdgeNode) getNodeAt(points.get(2), graph);
@@ -427,7 +427,6 @@ public class GraphConstructionTests extends GraphTesting {
         assertSame(getNodeAt(points.get(0), graph), getNodeAt(points.get(7), graph)); // Two different edges
 
     }
-    //TODO: Test circle
 
     @SuppressWarnings("ConstantConditions") // We assert that each pos is not null
     private void testPath(List<Vector3i> points, BlockGraph graph, int[] path) {
