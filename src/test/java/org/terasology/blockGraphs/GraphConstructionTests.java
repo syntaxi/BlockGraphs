@@ -23,9 +23,12 @@ import org.terasology.blockGraphs.dataMovement.GraphPositionComponent;
 import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
 import org.terasology.blockGraphs.graphDefinitions.GraphNodeComponent;
 import org.terasology.blockGraphs.graphDefinitions.GraphUri;
+import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.TerminusNode;
 import org.terasology.entitySystem.entity.EntityRef;
+import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;
 import org.terasology.world.BlockEntityRegistry;
 import org.terasology.world.WorldProvider;
@@ -37,10 +40,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.hamcrest.core.AnyOf.anyOf;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -48,6 +54,7 @@ public class GraphConstructionTests extends GraphTesting {
     private static final Logger logger = LoggerFactory.getLogger(GraphConstructionTests.class);
 
     private WorldProvider worldProvider;
+    private Block randomBlock;
     private Block leftBlock;
     private Block upwardsBlock;
     private BlockEntityRegistry blockEntityRegistry;
@@ -60,6 +67,8 @@ public class GraphConstructionTests extends GraphTesting {
         blockEntityRegistry = getHostContext().get(BlockEntityRegistry.class);
         BlockManager blockManager = getHostContext().get(BlockManager.class);
 
+        randomBlock = blockManager.getBlock("BlockGraphs:TestRandomBlock");
+        randomBlock.setKeepActive(true);
         leftBlock = blockManager.getBlock("BlockGraphs:TestLeftBlock");
         leftBlock.setKeepActive(true);
         upwardsBlock = blockManager.getBlock("BlockGraphs:TestUpwardsBlock");
@@ -230,6 +239,195 @@ public class GraphConstructionTests extends GraphTesting {
         /* Test that the nodes are linked up properly */
         testPath(points, graph, new int[]{0, 1, 2, 3, 4}); // The last point shouldn't be traced
     }
+
+    /**
+     * Tests crunching a simple graph with just one edge into a smaller graph
+     */
+    @Test
+    public void testSimpleCrunch() {
+        List<Vector3i> points = pointsToVectors(new int[][]{
+                {0, 0, 0}, // Terminus
+                {0, 1, 0},
+                {0, 2, 0},
+                {0, 3, 0},
+                {0, 4, 0},
+                {0, 5, 0},
+                {0, 6, 0},
+                {0, 7, 0},
+                {0, 8, 0},
+                {0, 9, 0}  // Terminus
+        });
+
+        forceAndWaitForGeneration(Vector3i.zero());
+        setAllTo(upwardsBlock, points);
+
+        GraphUri graphUri = graphConstructor.constructEntireGraph(points.get(0));
+        BlockGraph graph = graphManager.getGraphInstance(graphUri);
+
+        assertEquals(graphUri.toString(), "BlockGraphs:TestGraph.1"); // Graph was made with right URI
+        assertEquals(graph.getNodeCount(), points.size()); // Has the right number of nodes
+
+        graphConstructor.crunchGraph(graph);
+        assertEquals(graph.getNodeCount(), 3); // Has the right number of nodes
+        assertThat(getNodeAt(points.get(3), graph), is(getNodeAt(points.get(6), graph))); // All blocks point to the same edge
+
+        TerminusNode front = (TerminusNode) getNodeAt(points.get(0), graph);
+        TerminusNode back = (TerminusNode) getNodeAt(points.get(9), graph);
+        EdgeNode middle = (EdgeNode) getNodeAt(points.get(4), graph);
+        assertNotNull(front);
+        assertNotNull(back);
+        assertNotNull(middle);
+        assertThat(front.connectionNode, is(middle));
+        assertThat(back.connectionNode, is(middle));
+        assertThat(middle.frontNode, is(front));
+        assertThat(middle.backNode, is(back));
+    }
+
+    /**
+     * Tests crunching a graph with a junction into a smaller graph
+     */
+    @SuppressWarnings("ConstantConditions") // We check this
+    @Test
+    public void testJunctionCrunch() {
+        List<Vector3i> points = pointsToVectors(new int[][]{
+                {0, 0, 0}, // Terminus
+                {0, 1, 0},
+                {0, 2, 0},
+                {0, 3, 0},
+                {0, 4, 0},
+                {0, 5, 0}, // Junction
+                {0, 6, 0},
+                {0, 7, 0},
+                {0, 8, 0},
+                {0, 9, 0}, // Terminus
+                {1, 5, 0}  // Terminus
+        });
+
+        forceAndWaitForGeneration(Vector3i.zero());
+        setAllTo(upwardsBlock, points);
+
+        GraphUri graphUri = graphConstructor.constructEntireGraph(points.get(0));
+        BlockGraph graph = graphManager.getGraphInstance(graphUri);
+
+        assertEquals(graphUri.toString(), "BlockGraphs:TestGraph.1"); // Graph was made with right URI
+        assertEquals(graph.getNodeCount(), points.size()); // Has the right number of nodes
+
+        graphConstructor.crunchGraph(graph);
+        assertEquals(graph.getNodeCount(), 6); // Has the right number of nodes
+        assertThat(getNodeAt(points.get(3), graph), is(getNodeAt(points.get(6), graph))); // All blocks point to the same edge
+
+        TerminusNode front = (TerminusNode) getNodeAt(points.get(0), graph);
+        EdgeNode neck = (EdgeNode) getNodeAt(points.get(2), graph);
+        JunctionNode center = (JunctionNode) getNodeAt(points.get(5), graph);
+        EdgeNode tail = (EdgeNode) getNodeAt(points.get(7), graph);
+        TerminusNode back = (TerminusNode) getNodeAt(points.get(9), graph);
+        for (GraphNode node : new GraphNode[]{front, neck, center, tail, back}) {
+            assertNotNull(node);
+        }
+
+        /* Test that the connections were correct */
+        assertThat(front.connectionNode, is(neck));
+        assertThat(neck.frontNode, is(front));
+
+        assertThat(neck.backNode, is(center));
+        assertThat(center.getNodeForSide(Side.BOTTOM), is(neck));
+
+        assertThat(center.getNodeForSide(Side.TOP), is(tail));
+        assertThat(tail.frontNode, is(center));
+
+        assertThat(tail.backNode, is(back));
+        assertThat(back.connectionNode, is(tail));
+    }
+
+    /**
+     * Tests crunching to edges with different definitions down
+     */
+    @SuppressWarnings("ConstantConditions") // We check this
+    @Test
+    public void testMixedDefCrunch() {
+        List<Vector3i> points = pointsToVectors(new int[][]{
+                {0, 0, 0}, // Terminus
+                {0, 1, 0}, // A
+                {0, 2, 0}, // A
+                {0, 3, 0}, // A
+                {0, 4, 0}, // B
+                {0, 5, 0}, // B
+                {0, 6, 0}, // Terminus
+        });
+
+
+        forceAndWaitForGeneration(Vector3i.zero());
+        setAllTo(upwardsBlock, points);
+        setAllTo(randomBlock, pointsToVectors(new int[][]{{0, 0, 0}, {0, 6, 0}}));
+        setAllTo(leftBlock, pointsToVectors(new int[][]{{0, 4, 0}, {0, 5, 0}}));
+
+        GraphUri graphUri = graphConstructor.constructEntireGraph(points.get(0));
+        BlockGraph graph = graphManager.getGraphInstance(graphUri);
+
+        assertEquals(graphUri.toString(), "BlockGraphs:TestGraph.1"); // Graph was made with right URI
+        assertEquals(graph.getNodeCount(), points.size()); // Has the right number of nodes
+
+        graphConstructor.crunchGraph(graph);
+        assertEquals(graph.getNodeCount(), 4); // Has the right number of nodes
+        assertNotSame(getNodeAt(points.get(1), graph), getNodeAt(points.get(5), graph)); // Two different edges
+
+        TerminusNode front = (TerminusNode) getNodeAt(points.get(0), graph);
+        EdgeNode neck = (EdgeNode) getNodeAt(points.get(1), graph);
+        EdgeNode tail = (EdgeNode) getNodeAt(points.get(5), graph);
+        TerminusNode back = (TerminusNode) getNodeAt(points.get(6), graph);
+        for (GraphNode node : new GraphNode[]{front, neck, tail, back}) {
+            assertNotNull(node);
+        }
+
+        /* Test that the connections were correct */
+        assertThat(front.connectionNode, is(neck));
+        assertThat(neck.frontNode, is(front));
+
+        assertThat(neck.backNode, is(tail));
+        assertThat(tail.frontNode, is(neck));
+
+        assertThat(tail.backNode, is(back));
+        assertThat(back.connectionNode, is(tail));
+    }
+
+    /**
+     * Tests a circular situation
+     */
+    @Test
+    public void testCircle() {
+        List<Vector3i> points = pointsToVectors(new int[][]{
+                {0, 0, 0},
+                {0, 1, 0},
+                {0, 2, 0},
+                {1, 2, 0},
+                {2, 2, 0},
+                {2, 1, 0},
+                {2, 0, 0},
+                {1, 0, 0}
+        });
+
+
+        forceAndWaitForGeneration(Vector3i.zero());
+        setAllTo(upwardsBlock, points);
+
+        GraphUri graphUri = graphConstructor.constructEntireGraph(points.get(0));
+        BlockGraph graph = graphManager.getGraphInstance(graphUri);
+
+        assertEquals(graphUri.toString(), "BlockGraphs:TestGraph.1"); // Graph was made with right URI
+        assertEquals(graph.getNodeCount(), points.size()); // Has the right number of nodes
+        GraphNode front = getNodeAt(points.get(0), graph);
+        GraphNode back = getNodeAt(points.get(7), graph);
+        assertTrue(front instanceof EdgeNode);
+        assertTrue(back instanceof EdgeNode);
+        assertThat(back, anyOf(is(((EdgeNode) front).frontNode), is(((EdgeNode) front).backNode)));
+        assertThat(front, anyOf(is(((EdgeNode) back).frontNode), is(((EdgeNode) back).backNode)));
+
+        graphConstructor.crunchGraph(graph);
+        assertEquals(graph.getNodeCount(), 1); // Has the right number of nodes
+        assertSame(getNodeAt(points.get(0), graph), getNodeAt(points.get(7), graph)); // Two different edges
+
+    }
+    //TODO: Test circle
 
     @SuppressWarnings("ConstantConditions") // We assert that each pos is not null
     private void testPath(List<Vector3i> points, BlockGraph graph, int[] path) {

@@ -43,6 +43,8 @@ import org.terasology.world.block.BlockManager;
 import org.terasology.world.block.BlockUri;
 
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @RegisterSystem
 @Share(BlockGraphConstructor.class)
@@ -57,6 +59,100 @@ public class BlockGraphConstructor extends BaseComponentSystem {
     private BlockManager blockManager;
     @In
     private BlockEntityRegistry blockEntityRegistry;
+
+    private EdgeNode crunchEdge(EdgeNode frontEdge, EdgeNode backEdge, Set<EdgeNode> edges, BlockGraph graph) {
+
+        EdgeNode finalEdge = graph.createEdgeNode(frontEdge.definitionId);
+
+        finalEdge.frontPos = frontEdge.frontPos;
+        finalEdge.backPos = backEdge.backPos;
+        /* We have to store these because this information would be lost in the great removal */
+        GraphNode frontNode = frontEdge.frontNode;
+        GraphNode backNode = backEdge.backNode;
+        Side frontSide = frontEdge.frontSide;
+        Side backSide = backEdge.backSide;
+
+
+        edges.stream()/* Update the world blocks */
+                .map(edgeNode -> edgeNode.frontPos)
+                .map(blockEntityRegistry::getExistingEntityAt)
+                .forEach(entityRef -> {
+                    GraphNodeComponent component = entityRef.getComponent(GraphNodeComponent.class);
+                    component.nodeId = finalEdge.nodeId;
+                    entityRef.saveComponent(component);
+                });
+        /* Remove all these edges */
+        edges.forEach(graph::removeNode);
+
+        if (edges.size() == graph.getNodeCount()) {
+            // The graph is a ring
+            finalEdge.linkNode(finalEdge, Side.BACK, frontEdge.backSide);
+            finalEdge.linkNode(finalEdge, Side.FRONT, frontEdge.frontSide);
+            finalEdge.frontPos = frontEdge.frontPos;
+            finalEdge.backPos = frontEdge.backPos;
+        } else {
+            finalEdge.linkNode(frontNode, Side.FRONT, frontSide);
+            finalEdge.linkNode(backNode, Side.BACK, backSide);
+            doUniLink(frontNode, finalEdge, frontSide.reverse());
+            doUniLink(backNode, finalEdge, backSide.reverse());
+        }
+
+        return finalEdge;
+    }
+
+    public void crunchGraph(BlockGraph targetGraph) {
+        Set<Integer> visitedNodes = Sets.newHashSet();
+        Set<GraphNode> frontier = Sets.newHashSet();
+        frontier.add(targetGraph.getNodeIds().stream().findAny().map(targetGraph::getNode).orElse(null));
+
+        while (!frontier.isEmpty()) {
+            GraphNode node = Iterables.getFirst(frontier, null);
+            if (node == null) {
+                throw new IllegalStateException("Node in crunch frontier was null"); //Should be impossible
+            }
+            frontier.remove(node);
+            visitedNodes.add(node.nodeId);
+
+            if (node instanceof EdgeNode) { // Yes this is "evil". No I don't care
+                EdgeNode startNode = (EdgeNode) node;
+                Set<EdgeNode> edges = Sets.newHashSet();
+                edges.add(startNode);
+
+                // Chase down the front
+                EdgeNode frontEdge = raceDown(startNode, edges, e -> e.frontNode);
+                // Chase down the back
+                EdgeNode backEdge = raceDown(startNode, edges, e -> e.backNode);
+
+                /* Add all the intermediate edges */
+                visitedNodes.addAll(edges.stream().map(edge -> edge.nodeId).collect(Collectors.toList()));
+
+                /* Then crunch it all into one new edge */
+                node = crunchEdge(frontEdge, backEdge, edges, targetGraph);
+                visitedNodes.add(node.nodeId);
+            }
+
+            /* Add all connections we've not seen before */
+            frontier.addAll(
+                    node.getConnections()
+                            .stream()
+                            .filter(neighbour -> !visitedNodes.contains(neighbour.nodeId))
+                            .collect(Collectors.toList()));
+        }
+    }
+
+    private EdgeNode raceDown(EdgeNode start, Set<EdgeNode> edges, Function<EdgeNode, GraphNode> get) {
+        //TODO: Change from just going front or back, to going away from the current node
+        // This will fix the case where you have two edges facing into each other. 
+        EdgeNode current = start;
+        edges.add(start);
+        while (get.apply(current) instanceof EdgeNode
+                && current.definitionId == get.apply(current).definitionId
+                && get.apply(current) != start) {
+            current = (EdgeNode) get.apply(current);
+            edges.add(current);
+        }
+        return current;
+    }
 
     private TerminusNode newNodeAt(Vector3i pos, BlockGraph targetGraph, BlockUri blockUri) {
         TerminusNode baseNode = targetGraph.createTerminusNode(blockUri);
@@ -397,6 +493,21 @@ public class BlockGraphConstructor extends BaseComponentSystem {
         component.nodeId = node.nodeId;
 
         entity.saveComponent(component);
+
+        switch (node.getNodeType()) {
+            case TERMINUS:
+                ((TerminusNode) node).worldPos = pos;
+                break;
+            case EDGE:
+                ((EdgeNode) node).backPos = pos;
+                ((EdgeNode) node).frontPos = pos;
+                break;
+            case JUNCTION:
+                ((JunctionNode) node).worldPos = pos;
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + node.getNodeType());
+        }
     }
 
     /**
