@@ -43,7 +43,6 @@ import org.terasology.world.block.BlockManager;
 import org.terasology.world.block.BlockUri;
 
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @RegisterSystem
@@ -60,18 +59,8 @@ public class BlockGraphConstructor extends BaseComponentSystem {
     @In
     private BlockEntityRegistry blockEntityRegistry;
 
-    private EdgeNode crunchEdge(EdgeNode frontEdge, EdgeNode backEdge, Set<EdgeNode> edges, BlockGraph graph) {
-
-        EdgeNode finalEdge = graph.createEdgeNode(frontEdge.definitionId);
-
-        finalEdge.frontPos = frontEdge.frontPos;
-        finalEdge.backPos = backEdge.backPos;
-        /* We have to store these because this information would be lost in the great removal */
-        GraphNode frontNode = frontEdge.frontNode;
-        GraphNode backNode = backEdge.backNode;
-        Side frontSide = frontEdge.frontSide;
-        Side backSide = backEdge.backSide;
-
+    private EdgeNode crunchEdge(EdgeEnd frontEdge, EdgeEnd backEdge, Set<EdgeNode> edges, BlockGraph graph) {
+        EdgeNode finalEdge = graph.createEdgeNode(frontEdge.edgeEnd.definitionId);
 
         edges.stream()/* Update the world blocks */
                 .map(edgeNode -> edgeNode.frontPos)
@@ -81,22 +70,27 @@ public class BlockGraphConstructor extends BaseComponentSystem {
                     component.nodeId = finalEdge.nodeId;
                     entityRef.saveComponent(component);
                 });
-        /* Remove all these edges */
+
+
+        Side frontSide = frontEdge.getConnectionSide();
+        Side backSide = backEdge.getConnectionSide();
+        /* Remove all the old edges */
         edges.forEach(graph::removeNode);
 
-        if (edges.size() == graph.getNodeCount()) {
-            // The graph is a ring
-            finalEdge.linkNode(finalEdge, Side.BACK, frontEdge.backSide);
-            finalEdge.linkNode(finalEdge, Side.FRONT, frontEdge.frontSide);
-            finalEdge.frontPos = frontEdge.frontPos;
-            finalEdge.backPos = frontEdge.backPos;
+        if (frontEdge.edgeEnd == backEdge.edgeEnd) {
+            // It's a circle
+            finalEdge.linkNode(finalEdge, Side.FRONT, frontSide);
+            finalEdge.linkNode(finalEdge, Side.BACK, frontSide.reverse());
+            finalEdge.frontPos = frontEdge.getConnectionPos();
+            finalEdge.backPos = frontEdge.getConnectionPos();
         } else {
-            finalEdge.linkNode(frontNode, Side.FRONT, frontSide);
-            finalEdge.linkNode(backNode, Side.BACK, backSide);
-            doUniLink(frontNode, finalEdge, frontSide.reverse());
-            doUniLink(backNode, finalEdge, backSide.reverse());
+            finalEdge.linkNode(frontEdge.other, Side.FRONT, frontSide);
+            finalEdge.frontPos = frontEdge.getConnectionPos();
+            finalEdge.backPos = backEdge.getConnectionPos();
+            finalEdge.linkNode(backEdge.other, Side.BACK, backSide);
+            doUniLink(frontEdge.other, finalEdge, frontSide.reverse());
+            doUniLink(backEdge.other, finalEdge, backSide.reverse());
         }
-
         return finalEdge;
     }
 
@@ -119,15 +113,15 @@ public class BlockGraphConstructor extends BaseComponentSystem {
                 edges.add(startNode);
 
                 // Chase down the front
-                EdgeNode frontEdge = raceDown(startNode, edges, e -> e.frontNode);
+                EdgeEnd frontEnd = raceDown(startNode, startNode.frontNode, edges);
                 // Chase down the back
-                EdgeNode backEdge = raceDown(startNode, edges, e -> e.backNode);
+                EdgeEnd backEnd = raceDown(startNode, startNode.backNode, edges);
 
                 /* Add all the intermediate edges */
                 visitedNodes.addAll(edges.stream().map(edge -> edge.nodeId).collect(Collectors.toList()));
 
                 /* Then crunch it all into one new edge */
-                node = crunchEdge(frontEdge, backEdge, edges, targetGraph);
+                node = crunchEdge(frontEnd, backEnd, edges, targetGraph);
                 visitedNodes.add(node.nodeId);
             }
 
@@ -140,18 +134,61 @@ public class BlockGraphConstructor extends BaseComponentSystem {
         }
     }
 
-    private EdgeNode raceDown(EdgeNode start, Set<EdgeNode> edges, Function<EdgeNode, GraphNode> get) {
-        //TODO: Change from just going front or back, to going away from the current node
-        // This will fix the case where you have two edges facing into each other. 
-        EdgeNode current = start;
-        edges.add(start);
-        while (get.apply(current) instanceof EdgeNode
-                && current.definitionId == get.apply(current).definitionId
-                && get.apply(current) != start) {
-            current = (EdgeNode) get.apply(current);
-            edges.add(current);
+    private GraphNode nextNode(EdgeNode edge, GraphNode back) {
+        if (edge.backNode == back) {
+            return edge.frontNode;
+        } else {
+            return edge.backNode;
         }
-        return current;
+    }
+
+    private class EdgeEnd {
+        public GraphNode other;
+        public EdgeNode edgeEnd;
+
+        public EdgeEnd(EdgeNode edgeEnd, GraphNode other) {
+            this.other = other;
+            this.edgeEnd = edgeEnd;
+        }
+
+        public Side getConnectionSide() {
+            return edgeEnd.frontNode == other ? edgeEnd.frontSide : edgeEnd.backSide;
+        }
+
+        public Vector3i getConnectionPos() {
+            return edgeEnd.frontNode == other ? edgeEnd.frontPos : edgeEnd.backPos;
+        }
+    }
+
+    /**
+     * Travels down an edge, recording the nodes it moves through
+     *
+     * @param currentNode The node to start at
+     * @param nextNode    The next node to shift into
+     * @param edges       The running set of visited edges
+     * @return The final edge in this direction and it's next connection
+     */
+    private EdgeEnd raceDown(EdgeNode currentNode, GraphNode nextNode, Set<EdgeNode> edges) {
+        EdgeNode startNode = currentNode; // record the start
+
+        while (true) {
+            edges.add(currentNode);
+            if (nextNode instanceof EdgeNode && currentNode.definitionId == nextNode.definitionId) {
+                // Next node is an edge and the same type of edge, so shift into it
+                GraphNode lastNode = currentNode;
+                currentNode = (EdgeNode) nextNode;
+                nextNode = nextNode(currentNode, lastNode);
+            } else {
+                // Next node is not the same so we've reached the end
+                return new EdgeEnd(currentNode, nextNode);
+            }
+
+            // Check if we've looped a circle
+            if (currentNode == startNode) {
+                // This won't trigger on the first iteration because of the if statement above
+                return new EdgeEnd(currentNode, nextNode);
+            }
+        }
     }
 
     private TerminusNode newNodeAt(Vector3i pos, BlockGraph targetGraph, BlockUri blockUri) {
