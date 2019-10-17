@@ -77,6 +77,26 @@ public class BlockGraphConstructor extends BaseComponentSystem {
                     entityRef.saveComponent(component);
                 });
 
+        /* Record the positions of each point in the edge (in order) */
+        Set<Vector3i> positions = edges.stream().map(edgeNode -> edgeNode.frontPos).collect(Collectors.toSet());
+        Vector3i currPos = backEdge.getConnectionPos();
+        positions.remove(currPos);
+        finalEdge.worldPositions.add(currPos);
+        while (!positions.isEmpty()) {
+            Vector3i nextPos = null;
+            for (Vector3i neighbour : getSurroundingPos(currPos)) {
+                if (positions.contains(neighbour)) {
+                    nextPos = neighbour;
+                    break;
+                }
+            }
+            if (nextPos == null) {
+                throw new IllegalStateException("Current pos had no neighbours in the edge.");
+            }
+            positions.remove(nextPos);
+            finalEdge.worldPositions.add(nextPos);
+            currPos = nextPos;
+        }
 
         Side frontSide = frontEdge.getConnectionSide();
         Side backSide = backEdge.getConnectionSide();

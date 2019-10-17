@@ -15,6 +15,7 @@
  */
 package org.terasology.blockGraphs;
 
+import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -268,6 +269,7 @@ public class GraphConstructionTests extends GraphTesting {
         assertEquals(graph.getNodeCount(), points.size()); // Has the right number of nodes
 
         graphConstructor.crunchGraph(graph);
+
         assertEquals(graph.getNodeCount(), 3); // Has the right number of nodes
         assertThat(getNodeAt(points.get(3), graph), is(getNodeAt(points.get(6), graph))); // All blocks point to the same edge
 
@@ -281,7 +283,16 @@ public class GraphConstructionTests extends GraphTesting {
         assertThat(back.connectionNode, is(middle));
         assertThat(middle.frontNode, is(front));
         assertThat(middle.backNode, is(back));
+
+        /* Assert the edge has the right points */
+        assertWorldPoints(middle.worldPositions, points, 1, points.size() - 1);
     }
+
+    private void assertWorldPoints(List<Vector3i> worldPoints, List<Vector3i> points, int from, int to) {
+        Vector3i[] expectedPoints = Arrays.copyOfRange(points.toArray(new Vector3i[]{}), from, to);
+        assertThat(Arrays.asList(expectedPoints), anyOf(is(worldPoints), is(Lists.reverse(worldPoints))));
+    }
+
 
     /**
      * Tests crunching a graph with a junction into a smaller graph
@@ -337,6 +348,9 @@ public class GraphConstructionTests extends GraphTesting {
 
         assertThat(tail.backNode, is(back));
         assertThat(back.connectionNode, is(tail));
+
+        assertWorldPoints(neck.worldPositions, points, 1, 5);
+        assertWorldPoints(tail.worldPositions, points, 6, 9);
     }
 
     /**
@@ -388,6 +402,9 @@ public class GraphConstructionTests extends GraphTesting {
 
         assertThat(tail.backNode, is(back));
         assertThat(back.connectionNode, is(tail));
+
+        assertWorldPoints(neck.worldPositions, points, 1, 4);
+        assertWorldPoints(tail.worldPositions, points, 4, 6);
     }
 
     /**

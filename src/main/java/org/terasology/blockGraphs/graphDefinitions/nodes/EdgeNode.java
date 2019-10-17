@@ -21,7 +21,9 @@ import org.terasology.blockGraphs.graphDefinitions.GraphUri;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -58,6 +60,19 @@ public class EdgeNode extends GraphNode {
      * The back connection of this node
      */
     public GraphNode backNode;
+
+    /**
+     * The position of each position in this edge.
+     * This _IS_ ordered, with 0 being the {@link #backPos} and n-1 being the {@link #frontPos}
+     * TODO: Best way to split (and also store) and edge
+     * Possible use some simple linked class storing a "string" from one end to the other
+     * This could be a component and stored on the block entities. Maybe a part of the GraphNodeComponent
+     * ****
+     * Store it in the EdgeNode class. This doesn't split the edge information across two weird spots
+     * Store as an ArrayList: Allows for easy random index access
+     * Store as LinkedList: More intuitive towards what is is. Adjusting is "easier"
+     */
+    public List<Vector3i> worldPositions = new ArrayList<>();
 
     public EdgeNode(GraphUri graphUri, int nodeId, int definitionId) {
         super(graphUri, nodeId, definitionId);
