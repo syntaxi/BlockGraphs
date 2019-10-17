@@ -28,6 +28,7 @@ import org.terasology.entitySystem.systems.BaseComponentSystem;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;
 import org.terasology.registry.In;
+import org.terasology.registry.Share;
 import org.terasology.world.BlockEntityRegistry;
 import org.terasology.world.OnChangedBlock;
 import org.terasology.world.block.BlockUri;
@@ -52,6 +53,7 @@ import static org.terasology.blockGraphs.NodeLinkHelper.tryBiLink;
  * (More accurately when a block <i>with</i> a graph type is modified)
  * These can either result in a graph shrinking, being destroyed or in the splitting of a graph
  */
+@Share(GraphChangeManager.class)
 public class GraphChangeManager extends BaseComponentSystem {
 
     @In
@@ -61,9 +63,9 @@ public class GraphChangeManager extends BaseComponentSystem {
     private BlockGraphManager graphManager;
 
     /**
-     * Called when
+     * Called when a block changes.
      * <p>
-     * Filters on:
+     * Is used to detect if the change includes a graph block.
      *
      * @see OnChangedBlock
      */
@@ -79,8 +81,10 @@ public class GraphChangeManager extends BaseComponentSystem {
 
     /**
      * There was no graph block here before.
+     * <p>
+     * Scans for nearby graphs and then merges this block into each of them successively
      *
-     * @param event
+     * @param event The placing event
      */
     private void placingEvent(OnChangedBlock event) {
         GraphType graph = graphManager.getGraphType(event.getNewType().getURI());
@@ -103,7 +107,7 @@ public class GraphChangeManager extends BaseComponentSystem {
             node.node = node.graph.getNode(component.nodeId);
             nodes.add(node);
         }
-
+        //TODO: Finish by linking it to the mergeGraphs method below
     }
 
     private class NodePosition {
@@ -205,8 +209,8 @@ public class GraphChangeManager extends BaseComponentSystem {
      *      Just Link To & From
      * </pre>
      *
-     * @param from
-     * @param to
+     * @param from The node that is being merged
+     * @param to   The node/graph that is is being merged into
      */
     private void mergeInto(NodePosition from, NodePosition to) {
         //TODO: Merge graph instances and INVALIDATE old instance. Ensure references are updated to avoid issues
@@ -255,7 +259,7 @@ public class GraphChangeManager extends BaseComponentSystem {
         }
     }
 
-    private void splitEdgeAt(NodePosition pos) {
+    public void splitEdgeAt(NodePosition pos) {
         EdgeNode edgeNode = (EdgeNode) pos.node;
         // Firstly handle edge being 1 block
         if (edgeNode.worldPositions.size() == 1) {
@@ -323,7 +327,6 @@ public class GraphChangeManager extends BaseComponentSystem {
             } else { // Middle
 
                 // Calculate the positions of the split
-                Vector3i splitPos = pos.pos;
                 int indexOfPos = edgeNode.worldPositions.indexOf(pos.pos);
                 if (indexOfPos < 0) {
                     throw new IllegalStateException("Attempting to split an edge at point it doesn't cover");
@@ -346,6 +349,11 @@ public class GraphChangeManager extends BaseComponentSystem {
                 tryBiLink(edgeInfront, frontNode, frontSide);
                 edgeInfront.backPos = infrontPos;
                 tryBiLink(edgeInfront, junctionNode, getSideFrom(edgeInfront.backPos, junctionNode.worldPos));
+
+                // Shrink the node behind and link it to the junction
+                edgeNode.worldPositions = sublistCopy(edgeNode.worldPositions, 0, indexOfPos);
+                edgeNode.frontPos = behindPos;
+                tryBiLink(edgeNode, junctionNode, getSideFrom(edgeNode.frontPos, junctionNode.worldPos));
             }
         }
     }
