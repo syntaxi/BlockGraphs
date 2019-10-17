@@ -55,7 +55,7 @@ import java.util.SortedMap;
  * When the delay is up, the data is taken out of the map, the data is moved to the next location the dataEnterNode
  * method is called, and the cycle repeats.
  * <p>
- * The next location to move ot is calculated before the delay is held is because the delay is intended to simulate
+ * The next location to move to is calculated before the delay is held is because the delay is intended to simulate
  * the data having a travel time between the nodes. Thus if the node is altered before the data is able to reach the
  * destination, it is immediately ejected from the network and node, with the appropriate notifying methods being called.
  * <p>
@@ -176,7 +176,7 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
     private void treatAsJunction(EntityRef data, JunctionNode currentNode, GraphPositionComponent component, NodeDefinition nodeDefinition) {
         Side side = nodeDefinition.processJunction(currentNode, data, component.currentDirection);
         if (side == null) {
-            removeFromNetwork(data);
+            removeFromNetwork(data, false);
         } else {
             setNextNode(data, currentNode, currentNode.getNodeForSide(side), nodeDefinition.holdDataFor(currentNode));
         }
@@ -195,7 +195,7 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
     private void treatAsEdge(EntityRef data, EdgeNode currentNode, GraphPositionComponent component, NodeDefinition nodeDefinition) {
         EdgeSide side = nodeDefinition.processEdge(currentNode, data, EdgeSide.fromSide(component.currentDirection));
         if (side == null) {
-            removeFromNetwork(data);
+            removeFromNetwork(data, false);
             return;
         }
         switch (side) {
@@ -219,7 +219,7 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
      */
     private void treatAsTerminus(EntityRef data, TerminusNode currentNode, NodeDefinition nodeDefinition) {
         if (nodeDefinition.processTerminus(currentNode, data)) {
-            removeFromNetwork(data);
+            removeFromNetwork(data, false);
         } else {
             /* There is only on connection so bounce back the way it came in */
             setNextNode(data, currentNode, currentNode.connectionNode, nodeDefinition.holdDataFor(currentNode));
@@ -252,8 +252,13 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
      *
      * @param data The data to remove
      */
-    private void removeFromNetwork(EntityRef data) {
+    private void removeFromNetwork(EntityRef data, boolean wasEjected) {
+        GraphPositionComponent component = data.getComponent(GraphPositionComponent.class);
         data.removeComponent(GraphPositionComponent.class);
-        //TODO: Implement
+        OnLeaveGraphEvent event = new OnLeaveGraphEvent();
+        event.wasEjected = wasEjected;
+        event.finalNode = graphManager.getGraphNode(component.graph, component.currentNode);
+        data.send(event);
     }
+
 }

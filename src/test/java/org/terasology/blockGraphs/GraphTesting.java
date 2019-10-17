@@ -19,6 +19,7 @@ import com.google.common.collect.Sets;
 import org.terasology.blockGraphs.dataMovement.GraphMovementSystem;
 import org.terasology.blockGraphs.graphDefinitions.GraphType;
 import org.terasology.engine.SimpleUri;
+import org.terasology.entitySystem.Component;
 import org.terasology.entitySystem.entity.EntityBuilder;
 import org.terasology.entitySystem.entity.EntityManager;
 import org.terasology.entitySystem.entity.EntityRef;
@@ -53,6 +54,7 @@ public class GraphTesting extends ModuleTestingEnvironment {
         graphType.addNodeType(new TestUpwardsDefinition());
         graphType.addNodeType(new TestRandomDefinition());
         graphType.addNodeType(new TestLeftDefinition());
+        graphType.addNodeType(new TestRemoveDefinition());
 
         graphManager.addGraphType(graphType);
     }
@@ -60,12 +62,15 @@ public class GraphTesting extends ModuleTestingEnvironment {
     /**
      * Builds an entity data packet, already with appropriate components and values set
      *
+     * @param components Any components to add to the entity
      * @return A data packet to be passed around the graphs
      */
-    protected EntityRef buildData() {
+    protected EntityRef buildData(Component... components) {
         EntityBuilder builder = getHostContext().get(EntityManager.class).newBuilder();
         builder.setPersistent(true);
-        builder.addComponent(new NodePathTestComponent());
+        for (Component component : components) {
+            builder.addComponent(component);
+        }
         return builder.buildWithoutLifecycleEvents();
     }
 }

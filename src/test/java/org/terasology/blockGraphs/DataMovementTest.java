@@ -20,22 +20,29 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.blockGraphs.dataMovement.GraphPositionComponent;
+import org.terasology.blockGraphs.dataMovement.OnLeaveGraphEvent;
 import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
 import org.terasology.blockGraphs.graphDefinitions.GraphType;
 import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.TerminusNode;
 import org.terasology.engine.SimpleUri;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
+import org.terasology.moduletestingenvironment.TestEventReceiver;
 import org.terasology.world.block.BlockUri;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.core.AnyOf.anyOf;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -51,6 +58,7 @@ public class DataMovementTest extends GraphTesting {
         GraphType graphType = new GraphType(new SimpleUri("BlockGraphs:TestGraph"));
         graphType.addNodeType(new TestUpwardsDefinition());
         graphType.addNodeType(new TestRandomDefinition());
+        graphType.addNodeType(new TestRemoveDefinition());
 
         graph = graphManager.newGraphInstance(graphType);
     }
@@ -69,7 +77,7 @@ public class DataMovementTest extends GraphTesting {
      */
     @Test
     public void testSimpleGraph() {
-        EntityRef testData = buildData();
+        EntityRef testData = buildData(new NodePathTestComponent());
 
         /* Build Graph */
         TerminusNode[] terminusNodes = createTerminus(2, TestUpwardsDefinition.BLOCK_URI);
@@ -86,7 +94,7 @@ public class DataMovementTest extends GraphTesting {
         terminusNodes[1].linkNode(nodes[1], Side.BOTTOM);
 
         /* Insert & let the data travel through the system */
-        movementSystem.insertData(nodes[0], testData);
+        movementSystem.insertData(terminusNodes[0], testData);
         runUntil(() -> testData.getComponent(NodePathTestComponent.class).isFinished);
 
         /* Test the path travelled */
@@ -95,10 +103,10 @@ public class DataMovementTest extends GraphTesting {
                 terminusNodes[0].nodeId,
                 nodes[0].nodeId,
                 nodes[1].nodeId,
-                terminusNodes[0].nodeId);
+                terminusNodes[1].nodeId);
 
         assertThat(dataPath, is(expectedPath));
-        assertTrue(!testData.hasComponent(GraphPositionComponent.class));
+        assertFalse(testData.hasComponent(GraphPositionComponent.class));
     }
 
     /**
@@ -108,7 +116,7 @@ public class DataMovementTest extends GraphTesting {
      */
     @Test
     public void testEdgeGraph() {
-        EntityRef testData = buildData();
+        EntityRef testData = buildData(new NodePathTestComponent());
 
         /* Build Graph */
         TerminusNode[] nodes = createTerminus(2, TestUpwardsDefinition.BLOCK_URI);
@@ -131,7 +139,7 @@ public class DataMovementTest extends GraphTesting {
                 edgeNode.nodeId,
                 nodes[1].nodeId); // Edge node is created after the other two
         assertThat(dataPath, is(expectedPath));
-        assertTrue(!testData.hasComponent(GraphPositionComponent.class));
+        assertFalse(testData.hasComponent(GraphPositionComponent.class));
     }
 
     /**
@@ -149,7 +157,7 @@ public class DataMovementTest extends GraphTesting {
      */
     @Test
     public void testBranchedGraph() {
-        EntityRef testData = buildData();
+        EntityRef testData = buildData(new NodePathTestComponent());
         TerminusNode[] terminusNodes = createTerminus(3, TestRandomDefinition.BLOCK_URI);
         EdgeNode[] edgeNodes = createEdges(3, TestRandomDefinition.BLOCK_URI);
         JunctionNode junctionNode = createJunctions(1, TestRandomDefinition.BLOCK_URI)[0];
@@ -203,7 +211,7 @@ public class DataMovementTest extends GraphTesting {
                 is(expectedPaths.get(1)),
                 is(expectedPaths.get(2))
         ));
-        assertTrue(!testData.hasComponent(GraphPositionComponent.class));
+        assertFalse(testData.hasComponent(GraphPositionComponent.class));
     }
 
     /**
@@ -214,7 +222,7 @@ public class DataMovementTest extends GraphTesting {
      */
     @Test
     public void testMultipleNodeTypes() {
-        EntityRef testData = buildData();
+        EntityRef testData = buildData(new NodePathTestComponent());
         TerminusNode[] terminusNodes = createTerminus(2, TestUpwardsDefinition.BLOCK_URI);
         EdgeNode edgeNode = createEdges(1, TestRandomDefinition.BLOCK_URI)[0];
         JunctionNode junctionNode = createJunctions(1, TestUpwardsDefinition.BLOCK_URI)[0];
@@ -238,7 +246,59 @@ public class DataMovementTest extends GraphTesting {
                 junctionNode.nodeId,
                 terminusNodes[1].nodeId);
         assertThat(dataPath, is(expectedPath));
-        assertTrue(!testData.hasComponent(GraphPositionComponent.class));
+        assertFalse(testData.hasComponent(GraphPositionComponent.class));
+    }
+
+    @Test
+    public void testDataRemoved() {
+        EjectOnTriggerComponent component = new EjectOnTriggerComponent();
+        EntityRef testData = buildData(component, new NodePathTestComponent());
+
+        /* Build Graph */
+        TerminusNode[] terminusNodes = createTerminus(2, TestUpwardsDefinition.BLOCK_URI);
+        JunctionNode node = graph.createJunctionNode(TestUpwardsDefinition.BLOCK_URI);
+        JunctionNode removeNode = graph.createJunctionNode(TestRemoveDefinition.BLOCK_URI);
+
+        terminusNodes[0].linkNode(node, Side.TOP);
+
+        node.linkNode(terminusNodes[0], Side.BOTTOM);
+        node.linkNode(removeNode, Side.TOP);
+
+        removeNode.linkNode(node, Side.BOTTOM);
+        removeNode.linkNode(terminusNodes[1], Side.TOP);
+
+        terminusNodes[1].linkNode(removeNode, Side.BOTTOM);
+
+        /* Setup event receiver to listen for data being ejected */
+        AtomicBoolean wasRemoved = new AtomicBoolean(false);
+        AtomicReference<GraphNode> removedFrom = new AtomicReference<>(null);
+        AtomicBoolean wasEjected = new AtomicBoolean();
+        TestEventReceiver receiver = new TestEventReceiver<>(getHostContext(), OnLeaveGraphEvent.class, (event, entity) -> {
+            wasRemoved.set(true);
+            wasEjected.set(event.wasEjected);
+            removedFrom.set(event.finalNode);
+            // do something with the event or entity
+        });
+
+        /* Insert & let the data travel through the system */
+        component.trigger = graphNode -> graphNode == removeNode;
+        movementSystem.insertData(terminusNodes[0], testData);
+        runUntil(wasRemoved::get);
+
+
+        /* Test the path travelled */
+        List<Integer> dataPath = testData.getComponent(NodePathTestComponent.class).nodePath;
+        List<Integer> expectedPath = Arrays.asList(
+                terminusNodes[0].nodeId,
+                node.nodeId,
+                removeNode.nodeId); // We eject so we assume no final terminus
+
+        assertThat(dataPath, is(expectedPath));
+        assertTrue(testData.hasComponent(EjectOnTriggerComponent.class));
+        assertFalse(testData.hasComponent(GraphPositionComponent.class));
+
+        assertSame(removeNode, removedFrom.get());
+        assertFalse(wasEjected.get());
     }
 
     private JunctionNode[] createJunctions(int count, BlockUri block) {
