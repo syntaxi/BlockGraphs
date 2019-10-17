@@ -48,23 +48,7 @@ public abstract class GraphNode {
     public abstract NodeType getNodeType();
 
 
-    /**
-     * Gets the side that posTwo is in relation two posOne
-     * <p>
-     * This side will be in relation to posOne
-     * eg,
-     * <0, 0, 0> & <1, 0, 0> will give RIGHT
-     *
-     * @param posOne The pos in relation to
-     * @param posTwo The pos to find the side for
-     * @return The side from posOne to posTwo
-     */
-    public static Side getSideBetween(Vector3i posOne, Vector3i posTwo) {
-        return Side.inDirection(
-                posTwo.x - posOne.x,
-                posTwo.y - posOne.y,
-                posTwo.z - posOne.z);
-    }
+
 
     /**
      * Removes all connections this node has.

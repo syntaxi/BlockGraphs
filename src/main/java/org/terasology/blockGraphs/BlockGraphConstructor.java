@@ -45,6 +45,12 @@ import org.terasology.world.block.BlockUri;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.terasology.blockGraphs.NodeLinkHelper.doUniLink;
+import static org.terasology.blockGraphs.NodeLinkHelper.doesNodeHaveSpace;
+import static org.terasology.blockGraphs.NodeLinkHelper.getSideFrom;
+import static org.terasology.blockGraphs.NodeLinkHelper.getSurroundingPos;
+import static org.terasology.blockGraphs.NodeLinkHelper.tryBiLink;
+
 @RegisterSystem
 @Share(BlockGraphConstructor.class)
 public class BlockGraphConstructor extends BaseComponentSystem {
@@ -336,102 +342,6 @@ public class BlockGraphConstructor extends BaseComponentSystem {
         }
     }
 
-    /**
-     * Checks if a node can have a new node linked to on the given side.
-     *
-     * @param thisNode    The node to be linked
-     * @param thisToOther The side to link on
-     * @return True if the link can be made, false if there is already a connection
-     */
-    private boolean doesNodeHaveSpace(GraphNode thisNode, Side thisToOther) {
-        switch (thisNode.getNodeType()) {
-            case TERMINUS:
-                if (thisNode.getConnections().size() >= 1) {
-                    return false;
-                }
-                break;
-            case EDGE:
-                if (thisNode.getConnections().size() >= 2) {
-                    return false;
-                }
-                break;
-            case JUNCTION:
-                if (thisNode.getConnections().size() >= 6) {
-                    return false;
-                } else if (((JunctionNode) thisNode).getNodeForSide(thisToOther) != null) {
-                    // Junction is tricky because it cares about the side
-                    return false;
-                }
-                break;
-            default:
-                throw new IllegalStateException("Unexpected value: " + thisNode.getNodeType());
-        }
-        return true;
-    }
-
-    /**
-     * Checks if we can link the nodes together in both directions
-     *
-     * @param thisNode    The first node to link
-     * @param otherNode   The second node to link
-     * @param thisToOther The side from the first node to the second
-     * @return True if a bi-directional link can be made
-     */
-    private boolean canLinkNodes(GraphNode thisNode, GraphNode otherNode, Side thisToOther) {
-        return doesNodeHaveSpace(thisNode, thisToOther) && doesNodeHaveSpace(otherNode, thisToOther.reverse());
-    }
-
-    /**
-     * Links one node with another. Doesn't respect any pre-existing connections on the given side
-     * TODO: Extract into GraphNode class?
-     *
-     * @param thisNode    The node to link from
-     * @param otherNode   The node to link to
-     * @param thisToOther The side to link via
-     */
-    private void doUniLink(GraphNode thisNode, GraphNode otherNode, Side thisToOther) {
-        switch (thisNode.getNodeType()) {
-            case TERMINUS:
-                ((TerminusNode) thisNode).linkNode(otherNode, thisToOther);
-                break;
-            case EDGE:
-                EdgeNode thisEdge = (EdgeNode) thisNode;
-                if (thisEdge.frontNode == null) {
-                    thisEdge.linkNode(otherNode, Side.FRONT, thisToOther);
-                } else if (thisEdge.backNode == null) {
-                    thisEdge.linkNode(otherNode, Side.BACK, thisToOther);
-                }
-                break;
-            case JUNCTION:
-                JunctionNode thisJunction = (JunctionNode) thisNode;
-                thisJunction.linkNode(otherNode, thisToOther);
-                break;
-            default:
-                throw new IllegalStateException("Unexpected value: " + thisNode.getNodeType());
-        }
-    }
-
-    /**
-     * Tries to link this node an another node.
-     * If this node is a terminus, or junction try and link on the side it's physically on
-     * If this node is an edge, try to link at the front, and then the back
-     * Respect any existing connections
-     * Repeat for the other node to make the link two way
-     *
-     * @param thisNode    The first node
-     * @param otherNode   The second node to link
-     * @param thisToOther The side from the first node to the second
-     * @return True if they were linked, false otherwise
-     */
-    private boolean tryBiLink(GraphNode thisNode, GraphNode otherNode, Side thisToOther) {
-        if (canLinkNodes(thisNode, otherNode, thisToOther)) {
-            doUniLink(thisNode, otherNode, thisToOther);
-            doUniLink(otherNode, thisNode, thisToOther.reverse());
-            return true;
-        } else {
-            return false;
-        }
-    }
 
     /**
      * We can always upgrade unless it's a junction. Furthermore, an upgrade will ALWAYS have space for our node.
@@ -501,7 +411,7 @@ public class BlockGraphConstructor extends BaseComponentSystem {
      * @return The linked node (may not be the same ref). Null if failed
      */
     private GraphNode tryForceLink(GraphNode thisNode, Vector3i thisPos, GraphNode otherNode, Vector3i otherPos) {
-        Side thisToOther = GraphNode.getSideBetween(thisPos, otherPos);
+        Side thisToOther = getSideFrom(thisPos, otherPos);
 
         if ((doesNodeHaveSpace(thisNode, thisToOther) || canUpgrade(thisNode))
                 && (doesNodeHaveSpace(otherNode, thisToOther.reverse()) || canUpgrade(otherNode))) {
@@ -564,199 +474,4 @@ public class BlockGraphConstructor extends BaseComponentSystem {
         }
     }
 
-    private Vector3i[] getSurroundingPos(Vector3i worldPos) {
-        return Side.getAllSides().stream().map(side -> new Vector3i(side.getVector3i()).add(worldPos)).toArray(Vector3i[]::new);
-    }
-
-
-//
-//    /**
-//     * Adds the block at the given point to the graph
-//     *
-//     * @param position    The position of the block to add
-//     * @param targetGraph The graph to add the block too
-//     * @return The node at the given position.
-//     */
-//    private JunctionNode addPointToGraph(Vector3f position, BlockGraph targetGraph) {
-//        EntityRef blockEntity = blockEntityRegistry.getBlockEntityAt(position);
-//        GraphNodeComponent nodeComponent = blockEntity.getComponent(GraphNodeComponent.class);
-//
-//        /* Only add the position to this graph if it isn't already */
-//        if (nodeComponent == null || nodeComponent.graphUri != targetGraph.getUri()) {
-//            JunctionNode newNode = targetGraph.createNode(
-//                    worldProvider.getBlock(position).getURI());
-//            newNode.setWorldPos(new Vector3i(position));
-//
-//            nodeComponent = new GraphNodeComponent();
-//            nodeComponent.graphUri = targetGraph.getUri();
-//            nodeComponent.nodeId = newNode.getNodeId();
-//            blockEntity.addOrSaveComponent(nodeComponent);
-//
-//            return newNode;
-//        } else {
-//            return graphManager.getGraphNode(nodeComponent.graphUri, nodeComponent.nodeId);
-//        }
-//    }
-//
-//    private void updateNodeConnections(JunctionNode node) {
-//        /* Handle any nodes that this one has made stop being an edge */
-//        for (Map.Entry<Side, JunctionNode> entry : node.getConnectingNodes().entrySet()) {
-//            JunctionNode nodeConnection = entry.getValue();
-//            Side connectionSide = entry.getKey();
-//            if (nodeConnection.wasEdge()) {
-//                handleDeEdging(nodeConnection);
-//            }
-//        }
-//    }
-//
-//    /**
-//     * Handles converting a node from an edge into an edge and a junction (or similar)
-//     *
-//     * @param oldEdge The old node that is now being updated
-//     */
-//    private void handleDeEdging(JunctionNode oldEdge) {
-//        int oldId = oldEdge.getNodeId();
-//        Vector3i currentPos = oldEdge.getFrontPos();
-//        Vector3i edgeBack = oldEdge.getBackPos();
-//        BlockGraph graph = graphManager.getGraphInstance(oldEdge.getGraphUri());
-//        graph.removeNode(oldEdge);
-//        Vector3i priorPos = null;
-//        Set<JunctionNode> nodesToRelink = new HashSet<>();
-//
-//        JunctionNode currentNode = graph.createNode(worldProvider.getBlock(currentPos).getURI());
-//        currentNode.setFrontPos(currentPos);
-//        currentNode.setBackPos(currentPos);
-//        while (currentPos != edgeBack) { /* Loop until we reach the end of the edge */
-//            Map<Side, Integer> nodeMap = getNeighbouringNodes(currentPos, graph.getUri());
-//            if (nodeMap.size() == 0) { /* There is only one node in the edge */
-//                // This shouldn't be possible but may as well handle it
-//                break;
-//            } else if (nodeMap.size() <= 2) { /* If the current block only has two connections, we can link it */
-//                GraphNodeComponent nodeComponent = blockEntityRegistry
-//                        .getBlockEntityAt(currentPos)
-//                        .getComponent(GraphNodeComponent.class);
-//                nodeComponent.nodeId = currentNode.getNodeId();
-//                currentNode.setBackPos(currentPos);
-//
-//            } else { /* We have multiple connections. So we make a junction and continue */
-//                /* TODO: Need to possibly re-structure edges into a separate class to handle the intricacies like how they connect (ie, by what side)
-//                 * TODO: Possibly a alternative abstract class to NODE extending form it, or from a common interface
-//                 * TODO: Issue arises from the fact that both connections to an edge can be the same and thus clash in the nodes list.
-//                 * TODO: Possibly just use Side.FRONT & Side.BACK but this would be overloading the class and honestly just confusing
-//                 * TODO: Having to do logic for the edge is also confusing. Move methods to static and call from node type?`
-//                 */
-//                JunctionNode graphNode = graph.createNode(worldProvider.getBlock(currentPos).getURI());
-//                nodesToRelink.add(graphNode);
-//                GraphNodeComponent nodeComponent = blockEntityRegistry
-//                        .getBlockEntityAt(currentPos)
-//                        .getComponent(GraphNodeComponent.class);
-//                nodeComponent.nodeId = graphNode.getNodeId();
-//
-//                Vector3i[] newPos = incrementPos(currentPos, priorPos, nodeMap, oldId);
-//                currentPos = newPos[0];
-//                priorPos = newPos[1];
-//
-//                currentNode = graph.createNode(worldProvider.getBlock(currentPos).getURI());
-//
-//            }
-//            /* This is kinda ugly honestly */
-//            Vector3i[] newPos = incrementPos(currentPos, priorPos, nodeMap, oldId);
-//            currentPos = newPos[0];
-//            priorPos = newPos[1];
-//        }
-//
-//        nodesToRelink.forEach(this::linkToNeighbourNodes);
-//    }
-//
-//    /**
-//     * @param currentPos The current position being scanned
-//     * @param priorPos   The prior position, or null otherwise
-//     * @param fullMap    A map of all the connections
-//     * @param oldId      The ID of the old edge that is being replaced
-//     * @return The new position to scan and the old position
-//     */
-//    private Vector3i[] incrementPos(Vector3i currentPos, Vector3i priorPos, Map<Side, Integer> fullMap, int oldId) {
-//        /* Remove all the connections that are not part of the original edge */
-//        Map<Side, Integer> filteredMap = fullMap.entrySet()
-//                .stream()
-//                .filter(entry -> entry.getValue() == oldId)
-//                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-//
-//        /* Remove the way we came */
-//        if (priorPos != null && filteredMap.size() == 2) { /* If we are not on the first iteration, or last iteration */
-//            filteredMap.remove(
-//                    Side.inDirection(
-//                            priorPos.x - currentPos.x, //If there is an error here, flip the subtraction
-//                            priorPos.y - currentPos.y,
-//                            priorPos.z - currentPos.z));
-//        }
-//
-//        /* Move in the last remaining direction */
-//        return new Vector3i[]{currentPos,
-//                filteredMap.keySet()
-//                        .iterator()
-//                        .next()
-//                        .getAdjacentPos(priorPos)};
-//    }
-//
-//    /**
-//     * Gets the id's of any neighbouring nodes to this one.
-//     * Nodes are only counted if they are a part of the same graph
-//     * <p>
-//     * Also note that each block in an edge node will count.
-//     * This means that the result might return the same node for multiple sides if that is the case
-//     *
-//     * @param nodePos  The position to scan around
-//     * @param graphUri The URI of the graph to check against.
-//     * @return A mapping between the side and the node's ID
-//     */
-//    private Map<Side, Integer> getNeighbouringNodes(Vector3i nodePos, GraphUri graphUri) {
-//        Vector3i sidePos = new Vector3i();
-//        Map<Side, Integer> sideNodes = new HashMap<>(7);
-//
-//        for (Side side : Side.values()) {
-//            sidePos.set(nodePos).add(side.getVector3i());
-//            GraphNodeComponent nodeComponent = blockEntityRegistry.getBlockEntityAt(sidePos)
-//                    .getComponent(GraphNodeComponent.class);
-//            if (nodeComponent != null && nodeComponent.graphUri == graphUri) {
-//                sideNodes.put(side, nodeComponent.nodeId);
-//            }
-//        }
-//
-//        return sideNodes;
-//    }
-//
-//    /**
-//     * Checks and updates any node connections around a given node
-//     *
-//     * @param checkingNode The node to update around
-//     */
-//    private void linkToNeighbourNodes(JunctionNode checkingNode) {
-//        Map<Side, Integer> nodeMap = getNeighbouringNodes(checkingNode.getWorldPos(), checkingNode.getGraphUri());
-//        for (Map.Entry<Side, Integer> entry : nodeMap.entrySet()) {
-//            JunctionNode otherNode = graphManager.getGraphNode(checkingNode.getGraphUri(), entry.getValue());
-//            checkingNode.linkNode(otherNode);
-//        }
-//    }
-//
-//
-//    /**
-//     * Adds a single block to the new graph, and handle potential effects of this by updating any involved graphs
-//     *
-//     * @return The URI's of all the graphs that were updated
-//     */
-//    public List<GraphUri> addBlockToGraph() {
-//        //TODO: Implement
-//        return null;
-//    }
-//
-//    /**
-//     * Removes a block from the given graph and handles any effects of this, by updating any involved graphs
-//     *
-//     * @return The URI's of all the graphs that were updated, deleted or created
-//     */
-//    public List<GraphUri> removeBlockFromGraph() {
-//        //TODO: Implement
-//        return null;
-//    }
 }
