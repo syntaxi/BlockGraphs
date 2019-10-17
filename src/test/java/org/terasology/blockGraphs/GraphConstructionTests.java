@@ -15,90 +15,37 @@
  */
 package org.terasology.blockGraphs;
 
-import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.terasology.blockGraphs.dataMovement.GraphPositionComponent;
 import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
-import org.terasology.blockGraphs.graphDefinitions.GraphNodeComponent;
 import org.terasology.blockGraphs.graphDefinitions.GraphUri;
 import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.TerminusNode;
-import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;
-import org.terasology.world.BlockEntityRegistry;
-import org.terasology.world.WorldProvider;
-import org.terasology.world.block.Block;
-import org.terasology.world.block.BlockManager;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.hamcrest.core.AnyOf.anyOf;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-public class GraphConstructionTests extends GraphTesting {
+public class GraphConstructionTests extends WorldBasedTests {
     private static final Logger logger = LoggerFactory.getLogger(GraphConstructionTests.class);
-
-    private WorldProvider worldProvider;
-    private Block randomBlock;
-    private Block leftBlock;
-    private Block upwardsBlock;
-    private BlockEntityRegistry blockEntityRegistry;
 
     @Before
     public void initialize() {
         super.initialize();
 
-        worldProvider = getHostContext().get(WorldProvider.class);
-        blockEntityRegistry = getHostContext().get(BlockEntityRegistry.class);
-        BlockManager blockManager = getHostContext().get(BlockManager.class);
-
-        randomBlock = blockManager.getBlock("BlockGraphs:TestRandomBlock");
-        randomBlock.setKeepActive(true);
-        leftBlock = blockManager.getBlock("BlockGraphs:TestLeftBlock");
-        leftBlock.setKeepActive(true);
-        upwardsBlock = blockManager.getBlock("BlockGraphs:TestUpwardsBlock");
-        upwardsBlock.setKeepActive(true);
-    }
-
-    private void setAllTo(Block block, Iterable<Vector3i> points) {
-        points.forEach(point -> worldProvider.setBlock(point, block));
-    }
-
-    private List<Vector3i> pointsToVectors(int[][] points) {
-        return Arrays.stream(points).map(coords -> new Vector3i(coords[0], coords[1], coords[2])).collect(Collectors.toList());
-    }
-
-    /**
-     * Gets the node, if any, at the position in block space
-     *
-     * @param position The position to get the node at
-     * @param graph    The graph the node would belong to
-     * @return The node if it exists, null otherwise
-     */
-    private GraphNode getNodeAt(Vector3i position, BlockGraph graph) {
-        EntityRef blockEntity = blockEntityRegistry.getExistingEntityAt(position);
-        GraphNodeComponent component = blockEntity.getComponent(GraphNodeComponent.class);
-        if (component != null && component.graphUri == graph.getUri()) {
-            return graph.getNode(component.nodeId);
-        } else {
-            return null;
-        }
     }
 
     /**
@@ -288,16 +235,10 @@ public class GraphConstructionTests extends GraphTesting {
         assertWorldPoints(middle.worldPositions, points, 1, points.size() - 1);
     }
 
-    private void assertWorldPoints(List<Vector3i> worldPoints, List<Vector3i> points, int from, int to) {
-        Vector3i[] expectedPoints = Arrays.copyOfRange(points.toArray(new Vector3i[]{}), from, to);
-        assertThat(Arrays.asList(expectedPoints), anyOf(is(worldPoints), is(Lists.reverse(worldPoints))));
-    }
-
 
     /**
      * Tests crunching a graph with a junction into a smaller graph
      */
-    @SuppressWarnings("ConstantConditions") // We check this
     @Test
     public void testJunctionCrunch() {
         List<Vector3i> points = pointsToVectors(new int[][]{
@@ -356,7 +297,6 @@ public class GraphConstructionTests extends GraphTesting {
     /**
      * Tests crunching to edges with different definitions down
      */
-    @SuppressWarnings("ConstantConditions") // We check this
     @Test
     public void testMixedDefCrunch() {
         List<Vector3i> points = pointsToVectors(new int[][]{
@@ -444,25 +384,4 @@ public class GraphConstructionTests extends GraphTesting {
         assertSame(getNodeAt(points.get(0), graph), getNodeAt(points.get(7), graph)); // Two different edges
     }
 
-    @SuppressWarnings("ConstantConditions") // We assert that each pos is not null
-    private void testPath(List<Vector3i> points, BlockGraph graph, int[] path) {
-        EntityRef testData = buildData(new NodePathTestComponent());
-        movementSystem.insertData(getNodeAt(points.get(path[0]), graph), testData);
-        runUntil(() -> testData.getComponent(NodePathTestComponent.class).isFinished);
-
-        /* Test the path travelled */
-        List<Integer> dataPath = testData.getComponent(NodePathTestComponent.class).nodePath;
-        List<Integer> expectedPath = Arrays.stream(path)
-                .mapToObj(points::get)
-                .map(pos -> getNodeAt(pos, graph))
-                .map(node -> node.nodeId)
-                .collect(Collectors.toList());
-
-        assertThat(dataPath, is(expectedPath)); // Check the paths are the same
-        assertFalse(testData.hasComponent(GraphPositionComponent.class)); // Should be removed when the data is
-    }
-
-    private void testPath(List<Vector3i> points, BlockGraph graph) {
-        testPath(points, graph, IntStream.range(0, points.size()).toArray());
-    }
 }
