@@ -120,6 +120,28 @@ public class BlockGraphConstructor extends BaseComponentSystem {
         return finalEdge;
     }
 
+    public EdgeNode crunchChain(EdgeNode startNode, BlockGraph targetGraph) {
+        return runFrom(startNode, targetGraph, null);
+    }
+
+    private EdgeNode runFrom(EdgeNode startNode, BlockGraph targetGraph, Set<Integer> visitedNodes) {
+        Set<EdgeNode> edges = Sets.newHashSet();
+        edges.add(startNode);
+
+        // Chase down the front
+        EdgeEnd frontEnd = raceDown(startNode, startNode.frontNode, edges);
+        // Chase down the back
+        EdgeEnd backEnd = raceDown(startNode, startNode.backNode, edges);
+
+        /* Add all the intermediate edges */
+        if (visitedNodes != null) {
+            visitedNodes.addAll(edges.stream().map(edge -> edge.nodeId).collect(Collectors.toList()));
+        }
+
+        /* Then crunch it all into one new edge */
+        return crunchEdge(frontEnd, backEnd, edges, targetGraph);
+    }
+
     public void crunchGraph(BlockGraph targetGraph) {
         Set<Integer> visitedNodes = Sets.newHashSet();
         Set<GraphNode> frontier = Sets.newHashSet();
@@ -133,21 +155,10 @@ public class BlockGraphConstructor extends BaseComponentSystem {
             frontier.remove(node);
             visitedNodes.add(node.nodeId);
 
-            if (node instanceof EdgeNode) { // Yes this is "evil". No I don't care
-                EdgeNode startNode = (EdgeNode) node;
-                Set<EdgeNode> edges = Sets.newHashSet();
-                edges.add(startNode);
+            if (node.getNodeType() == NodeType.EDGE) { // Yes, this is "evil". No, I don't care.
 
-                // Chase down the front
-                EdgeEnd frontEnd = raceDown(startNode, startNode.frontNode, edges);
-                // Chase down the back
-                EdgeEnd backEnd = raceDown(startNode, startNode.backNode, edges);
+                node = runFrom((EdgeNode) node, targetGraph, visitedNodes);
 
-                /* Add all the intermediate edges */
-                visitedNodes.addAll(edges.stream().map(edge -> edge.nodeId).collect(Collectors.toList()));
-
-                /* Then crunch it all into one new edge */
-                node = crunchEdge(frontEnd, backEnd, edges, targetGraph);
                 visitedNodes.add(node.nodeId);
             }
 
