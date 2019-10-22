@@ -51,6 +51,42 @@ public class GraphChangeTests extends WorldBasedTests {
         entityRegistry = getHostContext().get(BlockEntityRegistry.class);
     }
 
+    @Test
+    public void testGraphOverwriting() {
+        List<Vector3i> points1 = pointsToVectors(new int[][]{
+                {0, 0, 0},
+                {0, 1, 0},
+                {0, 2, 0},
+                {0, 3, 0},
+                {0, 4, 0},
+                {0, 5, 0}
+        });
+        BlockGraph graph1 = constructAndCrunchPoints(points1);
+        BlockGraph graph2 = graphManager.getGraphInstance(graph1.getUri());
+
+    }
+
+    @Test
+    public void testMergingEdgeEdge() {
+        List<Vector3i> points1 = pointsToVectors(new int[][]{
+                {0, 0, 0},
+                {0, 1, 0},
+                {0, 2, 0},
+                {0, 3, 0},
+                {0, 4, 0},
+                {0, 5, 0}
+        });
+        BlockGraph graph1 = constructAndCrunchPoints(points1);
+        List<Vector3i> points2 = points1.stream().map(Vector3i::new).collect(Collectors.toList());
+        points2.forEach(pos -> pos.addX(1));
+        BlockGraph graph2 = constructAndCrunchPoints(points2);
+
+        NodePosition from = new NodePosition();
+        NodePosition to = new NodePosition();
+        changeManager.mergeInto(from, to);
+        //TODO test
+    }
+
     /**
      * A Terminus -> Edge -> Terminus that is split in the middle of the edge
      */
