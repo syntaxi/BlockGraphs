@@ -25,7 +25,6 @@ import org.terasology.blockGraphs.graphDefinitions.nodes.TerminusNode;
 import org.terasology.world.block.BlockUri;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -116,17 +115,21 @@ public class BlockGraph {
         return node;
     }
 
-    public GraphNode createNode(BlockUri block, NodeType type) {
+    public GraphNode createNode(int definition, NodeType type) {
         switch (type) {
             case JUNCTION:
-                return createJunctionNode(block);
+                return createJunctionNode(definition);
             case EDGE:
-                return createEdgeNode(block);
+                return createEdgeNode(definition);
             case TERMINUS:
-                return createTerminusNode(block);
+                return createTerminusNode(definition);
             default:
-                return null;
+                throw new IllegalStateException("Unexpected value: " + type);
         }
+    }
+
+    public GraphNode createNode(BlockUri block, NodeType type) {
+        return createNode(graphType.getDefinitionId(block), type);
     }
 
     /**
