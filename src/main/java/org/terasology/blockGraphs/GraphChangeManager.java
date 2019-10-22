@@ -277,4 +277,21 @@ public class GraphChangeManager extends BaseComponentSystem {
 
     }
 
+    /**
+     * Gets the node, if any, at the position in block space
+     *
+     * @param position The position to get the node at
+     * @param graph    The graph the node would belong to
+     * @return The node if it exists, null otherwise
+     */
+    private GraphNode getNodeAt(Vector3i position, BlockGraph graph) {
+        EntityRef blockEntity = entityRegistry.getExistingEntityAt(position);
+        GraphNodeComponent component = blockEntity.getComponent(GraphNodeComponent.class);
+        if (component != null && component.graphUri == graph.getUri()) {
+            return graph.getNode(component.nodeId);
+        } else {
+            return null;
+        }
+    }
+
 }
