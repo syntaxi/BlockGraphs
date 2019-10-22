@@ -25,6 +25,7 @@ import org.terasology.blockGraphs.graphDefinitions.nodes.TerminusNode;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.entitySystem.event.ReceiveEvent;
 import org.terasology.entitySystem.systems.BaseComponentSystem;
+import org.terasology.entitySystem.systems.RegisterSystem;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;
 import org.terasology.registry.In;
@@ -53,6 +54,7 @@ import static org.terasology.blockGraphs.NodeLinkHelper.tryBiLink;
  * (More accurately when a block <i>with</i> a graph type is modified)
  * These can either result in a graph shrinking, being destroyed or in the splitting of a graph
  */
+@RegisterSystem
 @Share(GraphChangeManager.class)
 public class GraphChangeManager extends BaseComponentSystem {
 
