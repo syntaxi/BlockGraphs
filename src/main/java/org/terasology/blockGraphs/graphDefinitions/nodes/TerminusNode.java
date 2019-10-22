@@ -84,5 +84,12 @@ public class TerminusNode extends GraphNode {
         connectionSide = null;
     }
 
+    /**
+     * @return True if this terminus has a connection, false otherwise
+     */
+    public boolean isConnected() {
+        return connectionNode != null;
+    }
+
 }
 
