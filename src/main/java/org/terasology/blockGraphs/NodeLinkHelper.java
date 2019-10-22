@@ -160,6 +160,16 @@ public final class NodeLinkHelper {
     }
 
     public static class NodePosition {
+        public NodePosition() {
+
+        }
+
+        public NodePosition(GraphNode node, Vector3i pos, BlockGraph graph) {
+            this.node = node;
+            this.pos = pos;
+            this.graph = graph;
+        }
+
         GraphNode node;
         Vector3i pos;
         BlockGraph graph;
