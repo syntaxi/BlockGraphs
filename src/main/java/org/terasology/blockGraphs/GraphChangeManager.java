@@ -46,7 +46,7 @@ import static org.terasology.blockGraphs.NodeLinkHelper.updatePosition;
 
 /**
  * This class is the counterpart to the {@link BlockGraphConstructor}.
- * Whilst it deals with constructing graphs from a collection of blocks,
+ * Whilst that deals with constructing graphs from a collection of blocks,
  * this deals with changes made to a graph once it has been constructed.
  * <p>
  * A change to a graph can be split into two major categories, placing and removing.
@@ -118,7 +118,14 @@ public class GraphChangeManager extends BaseComponentSystem {
         //TODO: Finish by linking it to the mergeGraphs method below
     }
 
-
+    /**
+     * Constructs a new graph at a given point and merges it into it's neighbouring graphs.
+     *
+     * @param graphType  The type of the graphs being merged
+     * @param blockType  The type of the node to merge at
+     * @param newPos     The position of the new graph
+     * @param neighbours The neighbour graphs to merge into
+     */
     private void mergeGraphs(GraphType graphType, BlockUri blockType, Vector3i newPos, List<NodePosition> neighbours) {
         NodePosition position = new NodePosition();
         position.graph = graphManager.newGraphInstance(graphType);
@@ -141,31 +148,31 @@ public class GraphChangeManager extends BaseComponentSystem {
      * TODO: Simplify this down somehow!!
      * <pre>
      * 1. Terminus == Terminus
-     *      1.1  Blank == T === T == Blank
+     *      1.1 Blank == T === T == Blank
      *          Link To & From
-     *      1.2  Blank == T === T == T (== Blank) [implied]
+     *      1.2 Blank == T === T == T (== Blank) [implied]
      *          Upgrade First To T into Edge
-     *      1.3  Blank == T === T == E
+     *      1.3 Blank == T === T == E
      *          Merge To T and To E
-     *      1.4  Blank == T === T == J
+     *      1.4 Blank == T === T == J
      *          Upgrade To T into Edge
-     *      1.5  T == T === T == T
+     *      1.5 T == T === T == T
      *          Upgrade First From T into Edge
      *          Upgrade First To T into Edge
      *          Merge Both E
-     *      1.6  T == T === T == E
+     *      1.6 T == T === T == E
      *          Upgrade First From T into Edge
      *          Upgrade To T into Edge
      *          Merge all Three E
-     *      1.7  T == T === T == J
+     *      1.7 T == T === T == J
      *          Upgrade First From T into Edge
      *          Upgrade To T into Edge
      *          Merge Both E
-     *      1.8  E == T === T == E
+     *      1.8 E == T === T == E
      *          Upgrade From T into Edge
      *          Upgrade To T into Edge
      *          Merge all Four E
-     *      1.9  E == T === T == J
+     *      1.9 E == T === T == J
      *          Upgrade From T into Edge
      *          Upgrade To T into Edge
      *          Merge all Three E
@@ -175,12 +182,12 @@ public class GraphChangeManager extends BaseComponentSystem {
      *          Merge Both E
      *
      * 2. Terminus == Edge
-     *      Because Edges must be "full" (ie both ends connected) we know that the TO pos will have to be a junction
-     *      So we can upgrade it to a Junction and apply the Junction rules
-     *      2.a End
+     *      Because Edges must be "full" (ie both ends connected) we know that the TO pos will have to be a junction,
+     *      so we can upgrade it to a Junction and apply the Junction rules
+     *      2.1 End
      *          Split E into a Junction and an Edge
      *          Apply appropriate rule (T === J)
-     *      2.b Middle
+     *      2.2 Middle
      *          Split E into a Junction and two Edges either side
      *          Apply appropriate rule (T === J)
      *
@@ -212,7 +219,7 @@ public class GraphChangeManager extends BaseComponentSystem {
      * </pre>
      *
      * @param from The node that is being merged
-     * @param to   The node/graph that is is being merged into
+     * @param to   The node/graph that it is being merged into
      */
     void mergeInto(NodePosition from, NodePosition to) {
         //TODO: Merge graph instances and INVALIDATE old instance. Ensure references are updated to avoid issues
@@ -231,74 +238,24 @@ public class GraphChangeManager extends BaseComponentSystem {
         }
     }
 
-    void moveGraphNodes(BlockGraph from, BlockGraph to) {
-        GraphNode start = from.getNode(from.getNodeIds().iterator().next());
-
-
-    }
-
-    private void duplicateConnectionBi(GraphNode oldFrom, GraphNode oldTo, GraphNode newFrom, GraphNode newTo) {
-        duplicateConnectionUni(oldFrom, oldTo, newFrom, newTo);
-        duplicateConnectionUni(oldTo, oldFrom, newTo, newFrom);
-    }
-
-    private void duplicateConnectionUni(GraphNode oldFrom, GraphNode oldTo, GraphNode newFrom, GraphNode newTo) {
-        switch (oldFrom.getNodeType()) {
-            case TERMINUS:
-                ((TerminusNode) newFrom).connectionNode = ((TerminusNode) oldFrom).connectionNode;
-                ((TerminusNode) newFrom).connectionSide = ((TerminusNode) oldFrom).connectionSide;
-                break;
-            case EDGE:
-                ((EdgeNode) newFrom)
-                break;
-            case JUNCTION:
-                break;
-            default:
-                throw new IllegalStateException("Unexpected value: " + oldFrom.getNodeType());
-        }
-    }
-
-    private GraphNode convertNodeToGraph(GraphNode oldNode, BlockGraph newGraph, Set<Integer> visited) {
-        GraphNode newNode = newGraph.createNode(oldNode.definitionId, oldNode.getNodeType());
-        switch (oldNode.getNodeType()) {
-            case TERMINUS:
-                if (((TerminusNode) oldNode).isConnected()) {
-                    GraphNode otherNode = ((TerminusNode) oldNode).connectionNode;
-
-                } else {
-                    // We just have a graph of one terminus
-                    // No further work needed
-                    updatePosition(newNode, entityRegistry);
-                    return newNode;
-                }
-                break;
-            case EDGE:
-                break;
-            case JUNCTION:
-                break;
-            default:
-                throw new IllegalStateException("Unexpected value: " + oldNode.getNodeType());
-        }
-    }
-
-
     /**
      * Merge a graph at a terminus node, into another graph.
-     * <p>
-     * If we
      *
-     * @param from The position in the first graph, that is merging into `to`
-     * @param to   The position in the second graph, that `from` is being merged into
+     * @param from The position in the graph merged from.
+     * @param to   The position in the graph being merged into.
      */
     private void mergeFromTerminus(NodePosition from, NodePosition to) {
         switch (to.node.getNodeType()) {
             case TERMINUS:
+                /* If either of the nodes are connected then we need to upgrade them into edges to handle having two connections. */
                 if (((TerminusNode) from.node).isConnected()) {
                     from.node = upgradeTerminusToEdge((TerminusNode) from.node);
                 }
                 if (((TerminusNode) to.node).isConnected()) {
                     to.node = upgradeTerminusToEdge((TerminusNode) to.node);
                 }
+
+                /* Now we link the two nodes */
                 linkNodes(from, to);
                 graphConstructor.crunchChain((EdgeNode) to.node, to.graph);
                 break;
@@ -307,20 +264,24 @@ public class GraphChangeManager extends BaseComponentSystem {
                 mergeFromEdge(to, from);
                 break;
             case JUNCTION:
-                // Utilise the reverse case to avoid duplicate code
-                if (((TerminusNode) to.node).isConnected()) {
-                    to.node = upgradeTerminusToEdge((TerminusNode) to.node);
-                    linkNodes(from, to);
-                    graphConstructor.crunchChain((EdgeNode) to.node, to.graph);
-                } else {
-                    linkNodes(from, to);
+                /* Upgrade 'FROM' node if it is a connected terminus */
+                if (((TerminusNode) from.node).isConnected()) {
+                    from.node = upgradeTerminusToEdge((TerminusNode) from.node);
                 }
+                linkNodes(from, to);
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + to.node.getNodeType());
         }
     }
 
+    /**
+     * Attempts to link two positions together.
+     * This link is bi-directional, so 'FROM' is linked to 'TO', and 'TO' is linked to 'FROM'
+     *
+     * @param from The first node in the link
+     * @param to   The second node in the link
+     */
     private void linkNodes(NodePosition from, NodePosition to) {
         Side fromToTo = getSideFrom(from.pos, to.pos);
         if (!tryBiLink(from.node, to.node, fromToTo)) {
@@ -344,9 +305,18 @@ public class GraphChangeManager extends BaseComponentSystem {
         mergeInto(from, to);
     }
 
+    /**
+     * Converts a terminus node into an edge node.
+     * This will produce an edge node that is not 'full'.
+     * This is technically a violation of what an edge node is and as such the node returned by this method should be linked to another one directly after returning
+     *
+     * @param node The node to upgrade
+     * @return The node as an edge
+     */
     private EdgeNode upgradeTerminusToEdge(TerminusNode node) {
         BlockGraph graph = graphManager.getGraphInstance(node.graphUri);
         if (node.isConnected()) {
+            /* If this node is connected, we need to re-add the connection */
             GraphNode connection = node.connectionNode;
             Side connectionSide = node.connectionSide;
             graph.removeNode(node);
@@ -354,29 +324,38 @@ public class GraphChangeManager extends BaseComponentSystem {
             tryBiLink(edgeNode, connection, connectionSide);
             return edgeNode;
         } else {
+            /* The node doesn't have a connection, so we can just delete it */
             graph.removeNode(node);
             return graph.createEdgeNode(node.definitionId);
         }
     }
 
+    /**
+     * Merge a junction node into another.
+     * This method uses existing code in all bar the JUNCTION <=> JUNCTION case.
+     *
+     * @param from The junction node to merge
+     * @param to The node to merge into
+     */
     private void mergeFromJunction(NodePosition from, NodePosition to) {
         switch (to.node.getNodeType()) {
             case TERMINUS:
                 mergeFromTerminus(to, from);
                 break;
             case EDGE:
-                mergeFromEdge(from, to); // Use existing code but flip the to and from
+                mergeFromEdge(to, from); // Use existing code but flip the to and from //TODO: why flip?
                 break;
             case JUNCTION:
-                linkNodes(from, to);
+                linkNodes(from, to); // We can simply try to link them
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + to.node.getNodeType());
         }
     }
 
-    private void removalEvent(OnChangedBlock event) {
 
+    private void removalEvent(OnChangedBlock event) {
+        //TODO: implement
     }
 
     /**
