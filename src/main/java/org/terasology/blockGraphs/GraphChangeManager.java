@@ -35,14 +35,12 @@ import org.terasology.world.block.BlockUri;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import static org.terasology.blockGraphs.NodeLinkHelper.NodePosition;
 import static org.terasology.blockGraphs.NodeLinkHelper.getSideFrom;
 import static org.terasology.blockGraphs.NodeLinkHelper.getSurroundingPos;
 import static org.terasology.blockGraphs.NodeLinkHelper.splitEdgeAt;
 import static org.terasology.blockGraphs.NodeLinkHelper.tryBiLink;
-import static org.terasology.blockGraphs.NodeLinkHelper.updatePosition;
 
 /**
  * This class is the counterpart to the {@link BlockGraphConstructor}.
@@ -118,6 +116,7 @@ public class GraphChangeManager extends BaseComponentSystem {
         //TODO: Finish by linking it to the mergeGraphs method below
     }
 
+    
     /**
      * Constructs a new graph at a given point and merges it into it's neighbouring graphs.
      *
@@ -257,7 +256,13 @@ public class GraphChangeManager extends BaseComponentSystem {
 
                 /* Now we link the two nodes */
                 linkNodes(from, to);
-                graphConstructor.crunchChain((EdgeNode) to.node, to.graph);
+
+                /* If one of the nodes was upgraded then we want to crunch */
+                if (to.node instanceof EdgeNode) {
+                    graphConstructor.crunchChain((EdgeNode) to.node, to.graph);
+                } else if (from.node instanceof EdgeNode) {
+                    graphConstructor.crunchChain((EdgeNode) from.node, to.graph);
+                }
                 break;
             case EDGE:
                 // Utilise the reverse case to avoid duplicate code
@@ -284,7 +289,7 @@ public class GraphChangeManager extends BaseComponentSystem {
      */
     private void linkNodes(NodePosition from, NodePosition to) {
         Side fromToTo = getSideFrom(from.pos, to.pos);
-        if (!tryBiLink(from.node, to.node, fromToTo)) {
+        if (!tryBiLink(from, to, fromToTo)) {
             throw new IllegalStateException("Failed to link two Nodes when merging graphs");
         }
     }
@@ -315,19 +320,25 @@ public class GraphChangeManager extends BaseComponentSystem {
      */
     private EdgeNode upgradeTerminusToEdge(TerminusNode node) {
         BlockGraph graph = graphManager.getGraphInstance(node.graphUri);
+        EdgeNode finalEdge = graph.createEdgeNode(node.definitionId);
+        finalEdge.worldPositions.add(node.worldPos);
         if (node.isConnected()) {
             /* If this node is connected, we need to re-add the connection */
             GraphNode connection = node.connectionNode;
             Side connectionSide = node.connectionSide;
             graph.removeNode(node);
-            EdgeNode edgeNode = graph.createEdgeNode(node.definitionId);
-            tryBiLink(edgeNode, connection, connectionSide);
-            return edgeNode;
+            tryBiLink(finalEdge, connection, connectionSide);
+            //We know this new edge will only have one connection so this works
+            if (finalEdge.frontNode != null) {
+                finalEdge.frontPos = node.worldPos;
+            } else {
+                finalEdge.backPos = node.worldPos;
+            }
         } else {
             /* The node doesn't have a connection, so we can just delete it */
             graph.removeNode(node);
-            return graph.createEdgeNode(node.definitionId);
         }
+        return finalEdge;
     }
 
     /**
@@ -335,7 +346,7 @@ public class GraphChangeManager extends BaseComponentSystem {
      * This method uses existing code in all bar the JUNCTION <=> JUNCTION case.
      *
      * @param from The junction node to merge
-     * @param to The node to merge into
+     * @param to   The node to merge into
      */
     private void mergeFromJunction(NodePosition from, NodePosition to) {
         switch (to.node.getNodeType()) {

@@ -47,10 +47,14 @@ public class TerminusNode extends GraphNode {
         return NodeType.TERMINUS;
     }
 
-
     public void linkNode(GraphNode node, Side onSide) {
         connectionNode = node;
         connectionSide = onSide;
+    }
+
+    public void linkNode(GraphNode node, Side onSide, Vector3i pos) {
+        linkNode(node, onSide);
+        worldPos = pos;
     }
 
     @Override

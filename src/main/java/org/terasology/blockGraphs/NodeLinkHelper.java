@@ -62,6 +62,40 @@ public final class NodeLinkHelper {
     }
 
     /**
+     * Links one node to another.
+     * Doesn't respect existing connections
+     * Updates the position of the connection, potentially also changing the worldPos for Terminus and Junction nodes
+     *
+     * @param thisNodePos  The position and node to link FROM
+     * @param otherNodePos The node and position to link TO
+     * @param thisToOther  The side from 'FROM' to 'TO'
+     */
+    static public void doUniLink(NodePosition thisNodePos, NodePosition otherNodePos, Side thisToOther) {
+        GraphNode thisNode = thisNodePos.node;
+        GraphNode otherNode = otherNodePos.node;
+        Vector3i thisPos = thisNodePos.pos;
+        switch (thisNode.getNodeType()) {
+            case TERMINUS:
+                ((TerminusNode) thisNode).linkNode(otherNode, thisToOther, thisPos);
+                break;
+            case EDGE:
+                EdgeNode thisEdge = (EdgeNode) thisNode;
+                if (thisEdge.frontNode == null) {
+                    thisEdge.linkNode(otherNode, Side.FRONT, thisToOther, thisPos);
+                } else if (thisEdge.backNode == null) {
+                    thisEdge.linkNode(otherNode, Side.BACK, thisToOther, thisPos);
+                }
+                break;
+            case JUNCTION:
+                JunctionNode thisJunction = (JunctionNode) thisNode;
+                thisJunction.linkNode(otherNode, thisToOther, thisPos);
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + thisNode.getNodeType());
+        }
+    }
+
+    /**
      * Tries to link this node an another node.
      * If this node is a terminus, or junction try and link on the side it's physically on
      * If this node is an edge, try to link at the front, and then the back
@@ -75,6 +109,16 @@ public final class NodeLinkHelper {
      */
     static public boolean tryBiLink(GraphNode thisNode, GraphNode otherNode, Side thisToOther) {
         if (canLinkNodes(thisNode, otherNode, thisToOther)) {
+            doUniLink(thisNode, otherNode, thisToOther);
+            doUniLink(otherNode, thisNode, thisToOther.reverse());
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    static public boolean tryBiLink(NodePosition thisNode, NodePosition otherNode, Side thisToOther) {
+        if (canLinkNodes(thisNode.node, otherNode.node, thisToOther)) {
             doUniLink(thisNode, otherNode, thisToOther);
             doUniLink(otherNode, thisNode, thisToOther.reverse());
             return true;

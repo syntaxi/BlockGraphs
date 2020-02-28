@@ -61,6 +61,19 @@ public class JunctionNode extends GraphNode {
     }
 
     /**
+     * Links this node with another.
+     * This does not respect any existing connection via that side.
+     * <p>
+     * Additionally, updates the position of this node to reflect the supplied position
+     *
+     * @param otherNode The other node to link to
+     */
+    public void linkNode(GraphNode otherNode, Side thisToOther, Vector3i pos) {
+        linkNode(otherNode, thisToOther);
+        worldPos = pos;
+    }
+
+    /**
      * Unlinks this node with the node on the specific side.
      * Does not ensure that the other half of the connection is broken
      *
@@ -104,4 +117,5 @@ public class JunctionNode extends GraphNode {
             unlinkNode(side);
         }
     }
+
 }

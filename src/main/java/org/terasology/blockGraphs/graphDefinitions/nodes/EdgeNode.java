@@ -87,8 +87,8 @@ public class EdgeNode extends GraphNode {
      * Links an end of the edge to a specific node, in a specific direction
      *
      * @param otherNode The node to link
-     * @param edgeSide  The end of the edge that the node should be linked to
-     * @param linkSide  The side that the node should be linked
+     * @param edgeSide  The end of the edge the node should be linked to
+     * @param linkSide  The side the node should be linked to
      */
     public void linkNode(GraphNode otherNode, Side edgeSide, Side linkSide) {
         if (edgeSide == Side.FRONT) {
@@ -98,6 +98,23 @@ public class EdgeNode extends GraphNode {
         } else if (edgeSide == Side.BACK) {
             backSide = linkSide;
             backNode = otherNode;
+        }
+    }
+
+    /**
+     * Links an end of this edge to a specific node, in a specific direction, at a specific position
+     *
+     * @param otherNode The node to link
+     * @param edgeSide  The end of the edge the node should be linked to
+     * @param linkSide  The side the node should be linked to
+     * @param pos       The position of the end of the edge being linked
+     */
+    public void linkNode(GraphNode otherNode, Side edgeSide, Side linkSide, Vector3i pos) {
+        linkNode(otherNode, edgeSide, linkSide);
+        if (edgeSide == Side.FRONT) {
+            frontPos = pos;
+        } else if (edgeSide == Side.BACK) {
+            backPos = pos;
         }
     }
 

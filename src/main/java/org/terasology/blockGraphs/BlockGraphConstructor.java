@@ -278,7 +278,7 @@ public class BlockGraphConstructor extends BaseComponentSystem {
             NodeDefinition definition = targetGraph.getGraphType().getDefinition(block.getURI());
 
             if (definition == null) {
-                // The block cannot be a member so we ignore
+                // The block cannot be a member, so we ignore
                 throw new IllegalStateException("Position with no node definition somehow added to frontier");
             }
 
@@ -305,6 +305,7 @@ public class BlockGraphConstructor extends BaseComponentSystem {
                 // TODO: merge the two
                 // Handle merging graphs: Update all Graph URI to point to the new ID
                 // Need to restrict who can make new graph types
+                continue; // We don't want to investigate neighbours of this pos
             } else {
                 // Is not a member of any graph so we can add it to ours
                 TerminusNode baseNode = newNodeAt(currentPos, targetGraph, block.getURI());
