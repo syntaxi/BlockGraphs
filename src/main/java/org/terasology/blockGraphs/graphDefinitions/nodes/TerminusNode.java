@@ -17,6 +17,7 @@ package org.terasology.blockGraphs.graphDefinitions.nodes;
 
 import com.google.common.collect.ImmutableSet;
 import org.terasology.blockGraphs.graphDefinitions.GraphUri;
+import org.terasology.blockGraphs.graphDefinitions.NodeRef;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;
 
@@ -36,7 +37,7 @@ public class TerminusNode extends GraphNode {
     /**
      * The node this terminus connects to
      */
-    public GraphNode connectionNode;
+    public NodeRef connectionNode;
 
     public TerminusNode(GraphUri graphUri, int nodeId, int definitionId) {
         super(graphUri, nodeId, definitionId);
@@ -47,25 +48,25 @@ public class TerminusNode extends GraphNode {
         return NodeType.TERMINUS;
     }
 
-    public void linkNode(GraphNode node, Side onSide) {
+    public void linkNode(NodeRef node, Side onSide) {
         connectionNode = node;
         connectionSide = onSide;
     }
 
-    public void linkNode(GraphNode node, Side onSide, Vector3i pos) {
+    public void linkNode(NodeRef node, Side onSide, Vector3i pos) {
         linkNode(node, onSide);
         worldPos = pos;
     }
 
     @Override
-    public void unlinkNode(GraphNode node) {
+    public void unlinkNode(NodeRef node) {
         if (node == connectionNode) {
             unlinkAll();
         }
     }
 
     @Override
-    public Collection<GraphNode> getConnections() {
+    public Collection<NodeRef> getConnections() {
         if (connectionNode != null) {
             return ImmutableSet.of(connectionNode);
         } else {
@@ -74,7 +75,7 @@ public class TerminusNode extends GraphNode {
     }
 
     @Override
-    public Side getSideForNode(GraphNode node) {
+    public Side getSideForNode(NodeRef node) {
         if (node == connectionNode) {
             return connectionSide;
         } else {

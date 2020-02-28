@@ -17,6 +17,7 @@ package org.terasology.blockGraphs.graphDefinitions.nodes;
 
 import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
 import org.terasology.blockGraphs.graphDefinitions.GraphUri;
+import org.terasology.blockGraphs.graphDefinitions.NodeRef;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;
 
@@ -63,9 +64,9 @@ public abstract class GraphNode {
      *
      * @param node The node to unlink
      */
-    public abstract void unlinkNode(GraphNode node);
+    public abstract void unlinkNode(NodeRef node);
 
-    public abstract Collection<GraphNode> getConnections();
+    public abstract Collection<NodeRef> getConnections();
 
-    public abstract Side getSideForNode(GraphNode node);
+    public abstract Side getSideForNode(NodeRef node);
 }

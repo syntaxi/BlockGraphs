@@ -18,6 +18,7 @@ package org.terasology.blockGraphs.graphDefinitions.nodes;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import org.terasology.blockGraphs.graphDefinitions.GraphUri;
+import org.terasology.blockGraphs.graphDefinitions.NodeRef;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;
 
@@ -45,7 +46,7 @@ public class EdgeNode extends GraphNode {
     /**
      * The node at the 'front' of this node
      */
-    public GraphNode frontNode;
+    public NodeRef frontNode;
 
 
     /**
@@ -59,7 +60,7 @@ public class EdgeNode extends GraphNode {
     /**
      * The back connection of this node
      */
-    public GraphNode backNode;
+    public NodeRef backNode;
 
     /**
      * The position of each position in this edge.
@@ -90,7 +91,7 @@ public class EdgeNode extends GraphNode {
      * @param edgeSide  The end of the edge the node should be linked to
      * @param linkSide  The side the node should be linked to
      */
-    public void linkNode(GraphNode otherNode, Side edgeSide, Side linkSide) {
+    public void linkNode(NodeRef otherNode, Side edgeSide, Side linkSide) {
         if (edgeSide == Side.FRONT) {
             frontSide = linkSide;
             frontNode = otherNode;
@@ -109,7 +110,7 @@ public class EdgeNode extends GraphNode {
      * @param linkSide  The side the node should be linked to
      * @param pos       The position of the end of the edge being linked
      */
-    public void linkNode(GraphNode otherNode, Side edgeSide, Side linkSide, Vector3i pos) {
+    public void linkNode(NodeRef otherNode, Side edgeSide, Side linkSide, Vector3i pos) {
         linkNode(otherNode, edgeSide, linkSide);
         if (edgeSide == Side.FRONT) {
             frontPos = pos;
@@ -139,7 +140,7 @@ public class EdgeNode extends GraphNode {
      * @param node The node to unlink
      */
     @Override
-    public void unlinkNode(GraphNode node) {
+    public void unlinkNode(NodeRef node) {
         if (frontNode == node) {
             frontSide = null;
             frontNode = null;
@@ -150,14 +151,14 @@ public class EdgeNode extends GraphNode {
     }
 
     @Override
-    public Collection<GraphNode> getConnections() {
-        Set<GraphNode> set = Sets.newHashSet(frontNode, backNode);
+    public Collection<NodeRef> getConnections() {
+        Set<NodeRef> set = Sets.newHashSet(frontNode, backNode);
         set.removeIf(Objects::isNull);
         return ImmutableSet.copyOf(set);
     }
 
     @Override
-    public Side getSideForNode(GraphNode node) {
+    public Side getSideForNode(NodeRef node) {
         if (frontNode == node) {
             return Side.FRONT;
         } else if (backNode == node) {

@@ -51,16 +51,12 @@ public class BlockGraph {
         return nodes.size();
     }
 
-    public GraphNode getNode(int id) {
-        return nodes.get(id);
+    public NodeRef getNode(int id) {
+        return refs.get(id);
     }
 
     public Set<Integer> getNodeIds() {
         return nodes.keySet();
-    }
-
-    public <T extends GraphNode> T getNodeAsType(int id) {
-        return (T) getNode(id);
     }
 
     public GraphUri getUri() {
@@ -80,43 +76,49 @@ public class BlockGraph {
      * @param block The block to create a node for
      * @return The new node type
      */
-    public JunctionNode createJunctionNode(BlockUri block) {
+    public NodeRef createJunctionNode(BlockUri block) {
         return createJunctionNode(graphType.getDefinitionId(block));
     }
 
-    public JunctionNode createJunctionNode(int definition) {
+    public NodeRef createJunctionNode(int definition) {
         JunctionNode node = new JunctionNode(uri, nextId++, definition);
         nodes.put(node.nodeId, node);
-        return node;
+        NodeRef ref = new NodeRef(node);
+        refs.put(node.nodeId, ref);
+        return ref;
     }
 
     /**
      * @see #createJunctionNode(BlockUri)
      */
-    public EdgeNode createEdgeNode(BlockUri block) {
+    public NodeRef createEdgeNode(BlockUri block) {
         return createEdgeNode(graphType.getDefinitionId(block));
     }
 
-    public EdgeNode createEdgeNode(int definition) {
+    public NodeRef createEdgeNode(int definition) {
         EdgeNode node = new EdgeNode(uri, nextId++, definition);
         nodes.put(node.nodeId, node);
-        return node;
+        NodeRef ref = new NodeRef(node);
+        refs.put(node.nodeId, ref);
+        return ref;
     }
 
     /**
      * @see #createJunctionNode(BlockUri)
      */
-    public TerminusNode createTerminusNode(BlockUri block) {
+    public NodeRef createTerminusNode(BlockUri block) {
         return createTerminusNode(graphType.getDefinitionId(block));
     }
 
-    public TerminusNode createTerminusNode(int definition) {
+    public NodeRef createTerminusNode(int definition) {
         TerminusNode node = new TerminusNode(uri, nextId++, definition);
         nodes.put(node.nodeId, node);
-        return node;
+        NodeRef ref = new NodeRef(node);
+        refs.put(node.nodeId, ref);
+        return ref;
     }
 
-    public GraphNode createNode(int definition, NodeType type) {
+    public NodeRef createNode(int definition, NodeType type) {
         switch (type) {
             case JUNCTION:
                 return createJunctionNode(definition);
@@ -129,22 +131,23 @@ public class BlockGraph {
         }
     }
 
-    public GraphNode createNode(BlockUri block, NodeType type) {
+    public NodeRef createNode(BlockUri block, NodeType type) {
         return createNode(graphType.getDefinitionId(block), type);
     }
 
     /**
      * Handles the removal of the node from the graph
      *
-     * @param node The node to remove
+     * @param ref The node to remove
      */
-    public void removeNode(GraphNode node) {
+    public void removeNode(NodeRef ref) {
         /* Remove all connections into this node */
-        node.getConnections().forEach(linked -> linked.unlinkNode(node));
+        ref.getConnections().forEach(linked -> linked.unlinkNode(ref.getNode()));
         /* Remove all connections out of this node */
-        node.unlinkAll();
+        ref.unlinkAll();
         /* Remove the node */
-        nodes.remove(node.nodeId);
-        node.nodeId = -1;
+        nodes.remove(ref.getNodeId());
+        refs.remove(ref.getNodeId());
+        ref.invalidate();
     }
 }

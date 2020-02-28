@@ -15,6 +15,7 @@
  */
 package org.terasology.blockGraphs.graphDefinitions;
 
+import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.NodeType;
 import org.terasology.math.Side;
@@ -32,9 +33,11 @@ public class NodeRef {
         node = source;
     }
 
-    public GraphNode getNode() {
-        return node;
+    @SuppressWarnings("unchecked")
+    public <T extends GraphNode> T getNode() {
+        return (T) node;
     }
+
 
     public boolean isValid() {
         return node != null;
@@ -84,21 +87,21 @@ public class NodeRef {
         node.unlinkAll();
     }
 
-    public void unlinkNode(GraphNode node) {
+    public void unlinkNode(NodeRef node) {
         if (!isValid()) {
             throw new InvalidNodeRefError();
         }
         node.unlinkNode(node);
     }
 
-    public Collection<GraphNode> getConnections() {
+    public Collection<NodeRef> getConnections() {
         if (!isValid()) {
             throw new InvalidNodeRefError();
         }
         return node.getConnections();
     }
 
-    public Side getSideForNode(GraphNode node) {
+    public Side getSideForNode(NodeRef node) {
         if (!isValid()) {
             throw new InvalidNodeRefError();
         }

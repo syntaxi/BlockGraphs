@@ -18,6 +18,7 @@ package org.terasology.blockGraphs.graphDefinitions.nodes;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import org.terasology.blockGraphs.graphDefinitions.GraphUri;
+import org.terasology.blockGraphs.graphDefinitions.NodeRef;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;
 
@@ -36,7 +37,7 @@ public class JunctionNode extends GraphNode {
     /**
      * All the nodes attached to this one, and what side they physically are on
      */
-    public BiMap<Side, GraphNode> nodes = HashBiMap.create(6);
+    public BiMap<Side, NodeRef> nodes = HashBiMap.create(6);
     /**
      * The position of this node in the world
      */
@@ -56,7 +57,7 @@ public class JunctionNode extends GraphNode {
      *
      * @param otherNode The other node to link to
      */
-    public void linkNode(GraphNode otherNode, Side nodeSide) {
+    public void linkNode(NodeRef otherNode, Side nodeSide) {
         nodes.put(nodeSide, otherNode);
     }
 
@@ -68,7 +69,7 @@ public class JunctionNode extends GraphNode {
      *
      * @param otherNode The other node to link to
      */
-    public void linkNode(GraphNode otherNode, Side thisToOther, Vector3i pos) {
+    public void linkNode(NodeRef otherNode, Side thisToOther, Vector3i pos) {
         linkNode(otherNode, thisToOther);
         worldPos = pos;
     }
@@ -84,17 +85,17 @@ public class JunctionNode extends GraphNode {
     }
 
     @Override
-    public void unlinkNode(GraphNode node) {
+    public void unlinkNode(NodeRef node) {
         nodes.values().remove(node);
     }
 
     @Override
-    public Collection<GraphNode> getConnections() {
+    public Collection<NodeRef> getConnections() {
         return nodes.values();
     }
 
     @Override
-    public Side getSideForNode(GraphNode node) {
+    public Side getSideForNode(NodeRef node) {
         return nodes.inverse().getOrDefault(node, null);
     }
 
@@ -104,7 +105,7 @@ public class JunctionNode extends GraphNode {
      * @param side The side the node is attached to
      * @return The node attached to the given side
      */
-    public GraphNode getNodeForSide(Side side) {
+    public NodeRef getNodeForSide(Side side) {
         return nodes.get(side);
     }
 
