@@ -80,12 +80,16 @@ public class BlockGraph {
         return createJunctionNode(graphType.getDefinitionId(block));
     }
 
-    public NodeRef createJunctionNode(int definition) {
-        JunctionNode node = new JunctionNode(uri, nextId++, definition);
-        nodes.put(node.nodeId, node);
+    private NodeRef makeRef(GraphNode node) {
         NodeRef ref = new NodeRef(node);
         refs.put(node.nodeId, ref);
         return ref;
+    }
+
+    public NodeRef createJunctionNode(int definition) {
+        JunctionNode node = new JunctionNode(uri, nextId++, definition);
+        nodes.put(node.nodeId, node);
+        return makeRef(node);
     }
 
     /**
@@ -98,9 +102,7 @@ public class BlockGraph {
     public NodeRef createEdgeNode(int definition) {
         EdgeNode node = new EdgeNode(uri, nextId++, definition);
         nodes.put(node.nodeId, node);
-        NodeRef ref = new NodeRef(node);
-        refs.put(node.nodeId, ref);
-        return ref;
+        return makeRef(node);
     }
 
     /**
@@ -113,9 +115,7 @@ public class BlockGraph {
     public NodeRef createTerminusNode(int definition) {
         TerminusNode node = new TerminusNode(uri, nextId++, definition);
         nodes.put(node.nodeId, node);
-        NodeRef ref = new NodeRef(node);
-        refs.put(node.nodeId, ref);
-        return ref;
+        return makeRef(node);
     }
 
     public NodeRef createNode(int definition, NodeType type) {
@@ -142,7 +142,7 @@ public class BlockGraph {
      */
     public void removeNode(NodeRef ref) {
         /* Remove all connections into this node */
-        ref.getConnections().forEach(linked -> linked.unlinkNode(ref.getNode()));
+        ref.getConnections().forEach(linked -> linked.unlinkNode(ref));
         /* Remove all connections out of this node */
         ref.unlinkAll();
         /* Remove the node */

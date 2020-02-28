@@ -19,7 +19,6 @@ import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
 import org.terasology.blockGraphs.graphDefinitions.GraphUri;
 import org.terasology.blockGraphs.graphDefinitions.NodeRef;
 import org.terasology.math.Side;
-import org.terasology.math.geom.Vector3i;
 
 import java.util.Collection;
 
@@ -47,8 +46,6 @@ public abstract class GraphNode {
     }
 
     public abstract NodeType getNodeType();
-
-
 
 
     /**

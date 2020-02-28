@@ -116,7 +116,7 @@ public class GraphChangeManager extends BaseComponentSystem {
         //TODO: Finish by linking it to the mergeGraphs method below
     }
 
-    
+
     /**
      * Constructs a new graph at a given point and merges it into it's neighbouring graphs.
      *

@@ -21,7 +21,6 @@ import org.terasology.blockGraphs.graphDefinitions.GraphType;
 import org.terasology.blockGraphs.graphDefinitions.GraphUri;
 import org.terasology.blockGraphs.graphDefinitions.nodeDefinitions.NodeDefinition;
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
-import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
 import org.terasology.engine.SimpleUri;
 import org.terasology.entitySystem.systems.BaseComponentSystem;
 import org.terasology.entitySystem.systems.RegisterMode;

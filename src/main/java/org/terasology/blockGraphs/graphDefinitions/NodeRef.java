@@ -15,7 +15,6 @@
  */
 package org.terasology.blockGraphs.graphDefinitions;
 
-import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.NodeType;
 import org.terasology.math.Side;
