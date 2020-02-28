@@ -15,8 +15,11 @@
  */
 package org.terasology.blockGraphs.graphDefinitions;
 
+import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.NodeType;
+import org.terasology.blockGraphs.graphDefinitions.nodes.TerminusNode;
 import org.terasology.math.Side;
 
 import java.util.Collection;
@@ -35,6 +38,18 @@ public class NodeRef {
     @SuppressWarnings("unchecked")
     public <T extends GraphNode> T getNode() {
         return (T) node;
+    }
+
+    public TerminusNode asTerminus() {
+        return getNode();
+    }
+
+    public EdgeNode asEdge() {
+        return getNode();
+    }
+
+    public JunctionNode asJunction() {
+        return getNode();
     }
 
 
