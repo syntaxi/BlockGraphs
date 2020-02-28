@@ -16,6 +16,10 @@
 package org.terasology.blockGraphs.graphDefinitions;
 
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
+import org.terasology.blockGraphs.graphDefinitions.nodes.NodeType;
+import org.terasology.math.Side;
+
+import java.util.Collection;
 
 /**
  * A reference to a node.
@@ -42,5 +46,62 @@ public class NodeRef {
 
     void setNode(GraphNode node) {
         this.node = node;
+    }
+
+
+    public int getNodeId() {
+        if (!isValid()) {
+            throw new InvalidNodeRefError();
+        }
+        return node.nodeId;
+    }
+
+    public GraphUri getGraphUri() {
+        if (!isValid()) {
+            throw new InvalidNodeRefError();
+        }
+        return node.graphUri;
+    }
+
+    public int getDefinitionId() {
+        if (!isValid()) {
+            throw new InvalidNodeRefError();
+        }
+        return node.definitionId;
+    }
+
+    public NodeType getNodeType() {
+        if (!isValid()) {
+            throw new InvalidNodeRefError();
+        }
+        return node.getNodeType();
+    }
+
+    public void unlinkAll() {
+        if (!isValid()) {
+            throw new InvalidNodeRefError();
+        }
+        node.unlinkAll();
+    }
+
+    public void unlinkNode(GraphNode node) {
+        if (!isValid()) {
+            throw new InvalidNodeRefError();
+        }
+        node.unlinkNode(node);
+    }
+
+    public Collection<GraphNode> getConnections() {
+        if (!isValid()) {
+            throw new InvalidNodeRefError();
+        }
+        return node.getConnections();
+    }
+
+    public Side getSideForNode(GraphNode node) {
+        if (!isValid()) {
+            throw new InvalidNodeRefError();
+        }
+        return node.getSideForNode(node);
     }
 }
