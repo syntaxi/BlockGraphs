@@ -40,6 +40,7 @@ public class BlockGraph {
 
     private int nextId = 1;
     private Map<Integer, GraphNode> nodes = new HashMap<>();
+    private Map<Integer, NodeRef> refs = new HashMap<>();
 
     public BlockGraph(GraphType graphType, GraphUri uri) {
         this.graphType = graphType;
