@@ -18,8 +18,8 @@ package org.terasology.blockGraphs;
 import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
 import org.terasology.blockGraphs.graphDefinitions.GraphNodeComponent;
 import org.terasology.blockGraphs.graphDefinitions.GraphType;
-import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
-import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
+import org.terasology.blockGraphs.graphDefinitions.NodeRef;
+import org.terasology.blockGraphs.graphDefinitions.nodes.NodeType;
 import org.terasology.blockGraphs.graphDefinitions.nodes.TerminusNode;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.entitySystem.event.ReceiveEvent;
@@ -247,21 +247,21 @@ public class GraphChangeManager extends BaseComponentSystem {
         switch (to.node.getNodeType()) {
             case TERMINUS:
                 /* If either of the nodes are connected then we need to upgrade them into edges to handle having two connections. */
-                if (((TerminusNode) from.node).isConnected()) {
-                    from.node = upgradeTerminusToEdge((TerminusNode) from.node);
+                if (from.node.asTerminus().isConnected()) {
+                    upgradeTerminusToEdge(from.node);
                 }
-                if (((TerminusNode) to.node).isConnected()) {
-                    to.node = upgradeTerminusToEdge((TerminusNode) to.node);
+                if (to.node.asTerminus().isConnected()) {
+                    upgradeTerminusToEdge(to.node);
                 }
 
                 /* Now we link the two nodes */
                 linkNodes(from, to);
 
                 /* If one of the nodes was upgraded then we want to crunch */
-                if (to.node instanceof EdgeNode) {
-                    graphConstructor.crunchChain((EdgeNode) to.node, to.graph);
-                } else if (from.node instanceof EdgeNode) {
-                    graphConstructor.crunchChain((EdgeNode) from.node, to.graph);
+                if (to.node.getNodeType() == NodeType.EDGE) {
+                    graphConstructor.crunchChain(to.node, to.graph);
+                } else if (from.node.getNodeType() == NodeType.EDGE) {
+                    graphConstructor.crunchChain(from.node, to.graph);
                 }
                 break;
             case EDGE:
@@ -270,8 +270,8 @@ public class GraphChangeManager extends BaseComponentSystem {
                 break;
             case JUNCTION:
                 /* Upgrade 'FROM' node if it is a connected terminus */
-                if (((TerminusNode) from.node).isConnected()) {
-                    from.node = upgradeTerminusToEdge((TerminusNode) from.node);
+                if (from.node.asTerminus().isConnected()) {
+                    upgradeTerminusToEdge(from.node);
                 }
                 linkNodes(from, to);
                 break;
@@ -318,27 +318,31 @@ public class GraphChangeManager extends BaseComponentSystem {
      * @param node The node to upgrade
      * @return The node as an edge
      */
-    private EdgeNode upgradeTerminusToEdge(TerminusNode node) {
-        BlockGraph graph = graphManager.getGraphInstance(node.graphUri);
-        EdgeNode finalEdge = graph.createEdgeNode(node.definitionId);
-        finalEdge.worldPositions.add(node.worldPos);
-        if (node.isConnected()) {
-            /* If this node is connected, we need to re-add the connection */
-            GraphNode connection = node.connectionNode;
-            Side connectionSide = node.connectionSide;
-            graph.removeNode(node);
-            tryBiLink(finalEdge, connection, connectionSide);
+    private NodeRef upgradeTerminusToEdge(NodeRef node) {
+        BlockGraph graph = graphManager.getGraphInstance(node.getGraphUri());
+        TerminusNode oldNode = node.getNode();
+
+        // Record information to allow us to reconnect the node
+        NodeRef connection = oldNode.connectionNode;
+        Side connectionSide = oldNode.connectionSide;
+        Vector3i pos = oldNode.worldPos;
+        boolean wasConnected = oldNode.isConnected();
+
+        node = graph.replaceNode(node, NodeType.EDGE);
+        node.asEdge().worldPositions.add(pos);
+
+        /* If this node is connected, we need to re-add the connection */
+        if (wasConnected) {
+            tryBiLink(node, connection, connectionSide);
             //We know this new edge will only have one connection so this works
-            if (finalEdge.frontNode != null) {
-                finalEdge.frontPos = node.worldPos;
+            if (node.asEdge().frontNode != null) {
+                node.asEdge().frontPos = pos;
             } else {
-                finalEdge.backPos = node.worldPos;
+                node.asEdge().backPos = pos;
             }
-        } else {
-            /* The node doesn't have a connection, so we can just delete it */
-            graph.removeNode(node);
         }
-        return finalEdge;
+
+        return node;
     }
 
     /**
@@ -376,7 +380,7 @@ public class GraphChangeManager extends BaseComponentSystem {
      * @param graph    The graph the node would belong to
      * @return The node if it exists, null otherwise
      */
-    private GraphNode getNodeAt(Vector3i position, BlockGraph graph) {
+    private NodeRef getNodeAt(Vector3i position, BlockGraph graph) {
         EntityRef blockEntity = entityRegistry.getExistingEntityAt(position);
         GraphNodeComponent component = blockEntity.getComponent(GraphNodeComponent.class);
         if (component != null && component.graphUri == graph.getUri()) {

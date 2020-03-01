@@ -136,6 +136,46 @@ public class BlockGraph {
     }
 
     /**
+     * Replaces the given node with a new one.
+     * Does not respect anything, except existing NodeRefs.
+     * Node will have the same ID.
+     *
+     * @param source   The node to replace
+     * @param nodeType The type of the node to replace it with
+     * @return The reference for the node
+     */
+    public NodeRef replaceNode(NodeRef source, NodeType nodeType) {
+        int id = source.getNodeId();
+        int def = source.getDefinitionId();
+
+        // Unlink connections
+        source.getConnections().forEach(linked -> linked.unlinkNode(source));
+        source.unlinkAll();
+        nodes.remove(id);
+
+        /* Make the new node */
+        GraphNode newNode;
+        switch (nodeType) {
+            case TERMINUS:
+                newNode = new TerminusNode(uri, id, def);
+                break;
+            case EDGE:
+                newNode = new EdgeNode(uri, id, def);
+                break;
+            case JUNCTION:
+                newNode = new JunctionNode(uri, id, def);
+                break;
+            default:
+                throw new IllegalStateException("Invalid node type: " + nodeType);
+        }
+
+        /* Store the new node */
+        nodes.put(id, newNode);
+        source.setNode(newNode);
+        return source;
+    }
+
+    /**
      * Handles the removal of the node from the graph
      *
      * @param ref The node to remove

@@ -15,10 +15,10 @@
  */
 package org.terasology.blockGraphs.dataMovement;
 
-import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
+import org.terasology.blockGraphs.graphDefinitions.NodeRef;
 import org.terasology.entitySystem.event.Event;
 
 public class OnLeaveGraphEvent implements Event {
-    public GraphNode finalNode;
+    public NodeRef finalNode;
     public boolean wasEjected = false;
 }

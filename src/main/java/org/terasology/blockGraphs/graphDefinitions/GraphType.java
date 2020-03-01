@@ -16,7 +16,6 @@
 package org.terasology.blockGraphs.graphDefinitions;
 
 import org.terasology.blockGraphs.graphDefinitions.nodeDefinitions.NodeDefinition;
-import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.engine.SimpleUri;
 import org.terasology.world.block.BlockUri;
 
@@ -65,8 +64,8 @@ public class GraphType {
         return nodeDefinitions.get(blockMapping.getOrDefault(block, 0));
     }
 
-    public NodeDefinition getDefinition(GraphNode node) {
-        return nodeDefinitions.get(node.definitionId);
+    public NodeDefinition getDefinition(NodeRef node) {
+        return nodeDefinitions.get(node.getDefinitionId());
     }
 
     public NodeDefinition getDefinition(int id) {

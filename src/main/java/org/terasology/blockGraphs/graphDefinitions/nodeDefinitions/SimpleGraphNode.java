@@ -15,10 +15,8 @@
  */
 package org.terasology.blockGraphs.graphDefinitions.nodeDefinitions;
 
-import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
+import org.terasology.blockGraphs.graphDefinitions.NodeRef;
 import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeSide;
-import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
-import org.terasology.blockGraphs.graphDefinitions.nodes.TerminusNode;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
 import org.terasology.utilities.random.FastRandom;
@@ -36,12 +34,12 @@ public class SimpleGraphNode implements NodeDefinition {
         return null;
     }
 
-    public Side processJunction(JunctionNode node, EntityRef data, Side entry) {
+    public Side processJunction(NodeRef node, EntityRef data, Side entry) {
         /* Return a random side out of the available options */
-        return new FastRandom().nextItem(new ArrayList<>(node.nodes.keySet()));
+        return new FastRandom().nextItem(new ArrayList<>(node.asJunction().nodes.keySet()));
     }
 
-    public EdgeSide processEdge(EdgeNode node, EntityRef data, EdgeSide entry) {
+    public EdgeSide processEdge(NodeRef node, EntityRef data, EdgeSide entry) {
         if (entry != null) {
             /* Choose opposite, ie move through */
             return entry.getOpposite();
@@ -51,7 +49,7 @@ public class SimpleGraphNode implements NodeDefinition {
         }
     }
 
-    public boolean processTerminus(TerminusNode node, EntityRef data) {
+    public boolean processTerminus(NodeRef node, EntityRef data) {
         /* Always pop the data out */
         return true;
     }

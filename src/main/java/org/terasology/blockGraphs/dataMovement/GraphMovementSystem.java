@@ -18,12 +18,9 @@ package org.terasology.blockGraphs.dataMovement;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import org.terasology.blockGraphs.BlockGraphManager;
+import org.terasology.blockGraphs.graphDefinitions.NodeRef;
 import org.terasology.blockGraphs.graphDefinitions.nodeDefinitions.NodeDefinition;
-import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeSide;
-import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
-import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
-import org.terasology.blockGraphs.graphDefinitions.nodes.TerminusNode;
 import org.terasology.engine.Time;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.entitySystem.systems.BaseComponentSystem;
@@ -42,13 +39,13 @@ import java.util.SortedMap;
  * Handles moving all the data through the graphs.
  * We don't use the DelayManager system to avoid polluting that with both small duration requests and large numbers of requests
  * <p>
- * Firstly, the data enters the movement system. This is done through the {@link #insertData(GraphNode, EntityRef)} method.
- * This will invoke the initial {@link NodeDefinition#dataEnterNode(GraphNode, EntityRef, Side)} method.
+ * Firstly, the data enters the movement system. This is done through the {@link #insertData(NodeRef, EntityRef)} method.
+ * This will invoke the initial {@link NodeDefinition#dataEnterNode(NodeRef, EntityRef, Side)} method.
  * <p>
  * Next the node is queried for the next node to move to using the appropriate of the following:
- * 1. {@link NodeDefinition#processJunction(JunctionNode, EntityRef, Side)}, if the node has 3 or more connections.
- * 2. {@link NodeDefinition#processEdge(EdgeNode, EntityRef, org.terasology.blockGraphs.graphDefinitions.nodes.EdgeSide)}, if the node is a edge (exactly 2 connections)
- * 3. {@link NodeDefinition#processTerminus(TerminusNode, EntityRef)}, if the node is a terminus, (exactly 1 connection)
+ * 1. {@link NodeDefinition#processJunction(NodeRef, EntityRef, Side)}, if the node has 3 or more connections.
+ * 2. {@link NodeDefinition#processEdge(NodeRef, EntityRef, EdgeSide)}, if the node is a edge (exactly 2 connections)
+ * 3. {@link NodeDefinition#processTerminus(NodeRef, EntityRef)}, if the node is a terminus, (exactly 1 connection)
  * <p>
  * The data delay is then obtained and the data is added to the mapping.
  * <p>
@@ -102,11 +99,11 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
      * @param node The node to insert the data at
      * @param data The data to add
      */
-    public void insertData(GraphNode node, EntityRef data) {
+    public void insertData(NodeRef node, EntityRef data) {
         GraphPositionComponent component = new GraphPositionComponent();
-        component.graph = node.graphUri;
+        component.graph = node.getGraphUri();
         component.isEntering = true;
-        component.currentNode = node.nodeId;
+        component.currentNode = node.getNodeId();
         component.currentDirection = null;
         component.nextNode = -1;
         component.nextDirection = null;
@@ -144,7 +141,7 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
     private void handlePackage(EntityRef data) {
         GraphPositionComponent component = data.getComponent(GraphPositionComponent.class);
         /* Move the data to the next node */
-        GraphNode currentNode = graphManager.getGraphNode(component.graph, component.currentNode);
+        NodeRef currentNode = graphManager.getGraphNode(component.graph, component.currentNode);
         NodeDefinition nodeDefinition = graphManager.getNodeDefinition(component.graph, component.currentNode);
 
         /* Allow the node ot operate on the data */
@@ -152,13 +149,13 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
 
         switch (currentNode.getNodeType()) {
             case JUNCTION:
-                treatAsJunction(data, (JunctionNode) currentNode, component, nodeDefinition);
+                treatAsJunction(data, currentNode, component, nodeDefinition);
                 break;
             case EDGE:
-                treatAsEdge(data, (EdgeNode) currentNode, component, nodeDefinition);
+                treatAsEdge(data, currentNode, component, nodeDefinition);
                 break;
             case TERMINUS:
-                treatAsTerminus(data, (TerminusNode) currentNode, nodeDefinition);
+                treatAsTerminus(data, currentNode, nodeDefinition);
                 break;
         }
     }
@@ -173,12 +170,12 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
      * @param currentNode    The node being moved around
      * @param nodeDefinition The definition used for the node
      */
-    private void treatAsJunction(EntityRef data, JunctionNode currentNode, GraphPositionComponent component, NodeDefinition nodeDefinition) {
+    private void treatAsJunction(EntityRef data, NodeRef currentNode, GraphPositionComponent component, NodeDefinition nodeDefinition) {
         Side side = nodeDefinition.processJunction(currentNode, data, component.currentDirection);
         if (side == null) {
             removeFromNetwork(data, false);
         } else {
-            setNextNode(data, currentNode, currentNode.getNodeForSide(side), nodeDefinition.holdDataFor(currentNode));
+            setNextNode(data, currentNode, currentNode.asJunction().getNodeForSide(side), nodeDefinition.holdDataFor(currentNode));
         }
     }
 
@@ -192,7 +189,7 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
      * @param currentNode    The node being moved around
      * @param nodeDefinition The definition used for the node
      */
-    private void treatAsEdge(EntityRef data, EdgeNode currentNode, GraphPositionComponent component, NodeDefinition nodeDefinition) {
+    private void treatAsEdge(EntityRef data, NodeRef currentNode, GraphPositionComponent component, NodeDefinition nodeDefinition) {
         EdgeSide side = nodeDefinition.processEdge(currentNode, data, EdgeSide.fromSide(component.currentDirection));
         if (side == null) {
             removeFromNetwork(data, false);
@@ -200,10 +197,10 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
         }
         switch (side) {
             case FRONT:
-                setNextNode(data, currentNode, currentNode.frontNode, nodeDefinition.holdDataFor(currentNode));
+                setNextNode(data, currentNode, currentNode.asEdge().frontNode, nodeDefinition.holdDataFor(currentNode));
                 break;
             case BACK:
-                setNextNode(data, currentNode, currentNode.backNode, nodeDefinition.holdDataFor(currentNode));
+                setNextNode(data, currentNode, currentNode.asEdge().backNode, nodeDefinition.holdDataFor(currentNode));
                 break;
         }
     }
@@ -217,12 +214,12 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
      * @param currentNode    The node being moved around
      * @param nodeDefinition The definition used for the node
      */
-    private void treatAsTerminus(EntityRef data, TerminusNode currentNode, NodeDefinition nodeDefinition) {
+    private void treatAsTerminus(EntityRef data, NodeRef currentNode, NodeDefinition nodeDefinition) {
         if (nodeDefinition.processTerminus(currentNode, data)) {
             removeFromNetwork(data, false);
         } else {
             /* There is only on connection so bounce back the way it came in */
-            setNextNode(data, currentNode, currentNode.connectionNode, nodeDefinition.holdDataFor(currentNode));
+            setNextNode(data, currentNode, currentNode.asTerminus().connectionNode, nodeDefinition.holdDataFor(currentNode));
         }
     }
 
@@ -236,10 +233,10 @@ public class GraphMovementSystem extends BaseComponentSystem implements UpdateSu
      *
      * @param data The data to move
      */
-    private void setNextNode(EntityRef data, GraphNode currentNode, GraphNode nextNode, int holdDuration) {
+    private void setNextNode(EntityRef data, NodeRef currentNode, NodeRef nextNode, int holdDuration) {
         GraphPositionComponent positionComponent = data.getComponent(GraphPositionComponent.class);
 
-        positionComponent.nextNode = nextNode.nodeId;
+        positionComponent.nextNode = nextNode.getNodeId();
         positionComponent.nextDirection = nextNode.getSideForNode(currentNode);
 
         delays.put(holdDuration + time.getGameTimeInMs(), data);

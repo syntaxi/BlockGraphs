@@ -23,6 +23,7 @@ import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
 import org.terasology.blockGraphs.graphDefinitions.GraphNodeComponent;
 import org.terasology.blockGraphs.graphDefinitions.GraphType;
 import org.terasology.blockGraphs.graphDefinitions.GraphUri;
+import org.terasology.blockGraphs.graphDefinitions.NodeRef;
 import org.terasology.blockGraphs.graphDefinitions.nodeDefinitions.NodeDefinition;
 import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
@@ -65,23 +66,28 @@ public class BlockGraphConstructor extends BaseComponentSystem {
     @In
     private BlockEntityRegistry blockEntityRegistry;
 
-    private EdgeNode crunchEdge(EdgeEnd frontEdge, EdgeEnd backEdge, Set<EdgeNode> edges, BlockGraph graph) {
-        EdgeNode finalEdge = graph.createEdgeNode(frontEdge.edgeEnd.definitionId);
+    private NodeRef crunchEdge(EdgeEnd frontEdge, EdgeEnd backEdge, Set<NodeRef> edges, BlockGraph graph) {
+        NodeRef finalEdge = graph.createEdgeNode(frontEdge.edgeEnd.getDefinitionId());
+        EdgeNode rawNode = finalEdge.getNode();
 
         edges.stream()/* Update the world blocks */
+                .map(ref -> (EdgeNode) ref.getNode())
                 .map(edgeNode -> edgeNode.frontPos)
                 .map(blockEntityRegistry::getExistingEntityAt)
                 .forEach(entityRef -> {
                     GraphNodeComponent component = entityRef.getComponent(GraphNodeComponent.class);
-                    component.nodeId = finalEdge.nodeId;
+                    component.nodeId = finalEdge.getNodeId();
                     entityRef.saveComponent(component);
                 });
 
         /* Record the positions of each point in the edge (in order) */
-        Set<Vector3i> positions = edges.stream().map(edgeNode -> edgeNode.frontPos).collect(Collectors.toSet());
+        Set<Vector3i> positions = edges.stream()
+                .map(ref -> (EdgeNode) ref.getNode())
+                .map(edgeNode -> edgeNode.frontPos)
+                .collect(Collectors.toSet());
         Vector3i currPos = backEdge.getConnectionPos();
         positions.remove(currPos);
-        finalEdge.worldPositions.add(currPos);
+        rawNode.worldPositions.add(currPos);
         while (!positions.isEmpty()) {
             Vector3i nextPos = null;
             for (Vector3i neighbour : getSurroundingPos(currPos)) {
@@ -94,48 +100,54 @@ public class BlockGraphConstructor extends BaseComponentSystem {
                 throw new IllegalStateException("Current pos had no neighbours in the edge.");
             }
             positions.remove(nextPos);
-            finalEdge.worldPositions.add(nextPos);
+            rawNode.worldPositions.add(nextPos);
             currPos = nextPos;
         }
 
         Side frontSide = frontEdge.getConnectionSide();
         Side backSide = backEdge.getConnectionSide();
-        /* Remove all the old edges */
+
+        /* Record the connection points _before_ we remove all the nodes as that will invalidate the edge refs */
+        rawNode.frontPos = frontEdge.getConnectionPos();
+        rawNode.backPos = frontEdge.getConnectionPos();
+
+        /* Remove all the old edges
+        * This goes first so that the end of the 'OTHER' node is empty*/
         edges.forEach(graph::removeNode);
 
         if (frontEdge.edgeEnd == backEdge.edgeEnd) {
             // It's a circle
-            finalEdge.linkNode(finalEdge, Side.FRONT, frontSide);
-            finalEdge.linkNode(finalEdge, Side.BACK, frontSide.reverse());
-            finalEdge.frontPos = frontEdge.getConnectionPos();
-            finalEdge.backPos = frontEdge.getConnectionPos();
+            rawNode.linkNode(finalEdge, Side.FRONT, frontSide);
+            rawNode.linkNode(finalEdge, Side.BACK, frontSide.reverse());
         } else {
-            finalEdge.linkNode(frontEdge.other, Side.FRONT, frontSide);
-            finalEdge.frontPos = frontEdge.getConnectionPos();
-            finalEdge.backPos = backEdge.getConnectionPos();
-            finalEdge.linkNode(backEdge.other, Side.BACK, backSide);
+            rawNode.linkNode(frontEdge.other, Side.FRONT, frontSide);
+            rawNode.linkNode(backEdge.other, Side.BACK, backSide);
+
             doUniLink(frontEdge.other, finalEdge, frontSide.reverse());
             doUniLink(backEdge.other, finalEdge, backSide.reverse());
         }
         return finalEdge;
     }
 
-    public EdgeNode crunchChain(EdgeNode startNode, BlockGraph targetGraph) {
+    public NodeRef crunchChain(NodeRef startNode, BlockGraph targetGraph) {
         return runFrom(startNode, targetGraph, null);
     }
 
-    private EdgeNode runFrom(EdgeNode startNode, BlockGraph targetGraph, Set<Integer> visitedNodes) {
-        Set<EdgeNode> edges = Sets.newHashSet();
+    private NodeRef runFrom(NodeRef startNode, BlockGraph targetGraph, Set<Integer> visitedNodes) {
+        Set<NodeRef> edges = Sets.newHashSet();
         edges.add(startNode);
 
         // Chase down the front
-        EdgeEnd frontEnd = raceDown(startNode, startNode.frontNode, edges);
+        EdgeEnd frontEnd = raceDown(startNode, startNode.asEdge().frontNode, edges);
         // Chase down the back
-        EdgeEnd backEnd = raceDown(startNode, startNode.backNode, edges);
+        EdgeEnd backEnd = raceDown(startNode, startNode.asEdge().backNode, edges);
 
         /* Add all the intermediate edges */
         if (visitedNodes != null) {
-            visitedNodes.addAll(edges.stream().map(edge -> edge.nodeId).collect(Collectors.toList()));
+            visitedNodes.addAll(
+                    edges.stream()
+                            .map(NodeRef::getNodeId)
+                            .collect(Collectors.toList()));
         }
 
         /* Then crunch it all into one new edge */
@@ -144,56 +156,56 @@ public class BlockGraphConstructor extends BaseComponentSystem {
 
     public void crunchGraph(BlockGraph targetGraph) {
         Set<Integer> visitedNodes = Sets.newHashSet();
-        Set<GraphNode> frontier = Sets.newHashSet();
+        Set<NodeRef> frontier = Sets.newHashSet();
         frontier.add(targetGraph.getNodeIds().stream().findAny().map(targetGraph::getNode).orElse(null));
 
         while (!frontier.isEmpty()) {
-            GraphNode node = Iterables.getFirst(frontier, null);
+            NodeRef node = Iterables.getFirst(frontier, null);
             if (node == null) {
                 throw new IllegalStateException("Node in crunch frontier was null"); //Should be impossible
             }
             frontier.remove(node);
-            visitedNodes.add(node.nodeId);
+            visitedNodes.add(node.getNodeId());
 
-            if (node.getNodeType() == NodeType.EDGE) { // Yes, this is "evil". No, I don't care.
+            if (node.getNodeType() == NodeType.EDGE) {
 
-                node = runFrom((EdgeNode) node, targetGraph, visitedNodes);
+                node = runFrom(node, targetGraph, visitedNodes);
 
-                visitedNodes.add(node.nodeId);
+                visitedNodes.add(node.getNodeId());
             }
 
             /* Add all connections we've not seen before */
             frontier.addAll(
                     node.getConnections()
                             .stream()
-                            .filter(neighbour -> !visitedNodes.contains(neighbour.nodeId))
+                            .filter(neighbour -> !visitedNodes.contains(neighbour.getNodeId()))
                             .collect(Collectors.toList()));
         }
     }
 
-    private GraphNode nextNode(EdgeNode edge, GraphNode back) {
-        if (edge.backNode == back) {
-            return edge.frontNode;
+    private NodeRef nextNode(NodeRef edge, NodeRef back) {
+        if (edge.asEdge().backNode == back) {
+            return edge.asEdge().frontNode;
         } else {
-            return edge.backNode;
+            return edge.asEdge().backNode;
         }
     }
 
     private class EdgeEnd {
-        public GraphNode other;
-        public EdgeNode edgeEnd;
+        public NodeRef other;
+        public NodeRef edgeEnd;
 
-        public EdgeEnd(EdgeNode edgeEnd, GraphNode other) {
+        public EdgeEnd(NodeRef edgeEnd, NodeRef other) {
             this.other = other;
             this.edgeEnd = edgeEnd;
         }
 
         public Side getConnectionSide() {
-            return edgeEnd.frontNode == other ? edgeEnd.frontSide : edgeEnd.backSide;
+            return edgeEnd.asEdge().frontNode == other ? edgeEnd.asEdge().frontSide : edgeEnd.asEdge().backSide;
         }
 
         public Vector3i getConnectionPos() {
-            return edgeEnd.frontNode == other ? edgeEnd.frontPos : edgeEnd.backPos;
+            return edgeEnd.asEdge().frontNode == other ? edgeEnd.asEdge().frontPos : edgeEnd.asEdge().backPos;
         }
     }
 
@@ -205,15 +217,15 @@ public class BlockGraphConstructor extends BaseComponentSystem {
      * @param edges       The running set of visited edges
      * @return The final edge in this direction and it's next connection
      */
-    private EdgeEnd raceDown(EdgeNode currentNode, GraphNode nextNode, Set<EdgeNode> edges) {
-        EdgeNode startNode = currentNode; // record the start
+    private EdgeEnd raceDown(NodeRef currentNode, NodeRef nextNode, Set<NodeRef> edges) {
+        NodeRef startNode = currentNode; // Record the start
 
         while (true) {
             edges.add(currentNode);
-            if (nextNode instanceof EdgeNode && currentNode.definitionId == nextNode.definitionId) {
+            if (nextNode.getNodeType() == NodeType.EDGE && currentNode.getDefinitionId() == nextNode.getDefinitionId()) {
                 // Next node is an edge and the same type of edge, so shift into it
-                GraphNode lastNode = currentNode;
-                currentNode = (EdgeNode) nextNode;
+                NodeRef lastNode = currentNode;
+                currentNode = nextNode;
                 nextNode = nextNode(currentNode, lastNode);
             } else {
                 // Next node is not the same so we've reached the end
@@ -228,15 +240,15 @@ public class BlockGraphConstructor extends BaseComponentSystem {
         }
     }
 
-    private TerminusNode newNodeAt(Vector3i pos, BlockGraph targetGraph, BlockUri blockUri) {
-        TerminusNode baseNode = targetGraph.createTerminusNode(blockUri);
-        baseNode.worldPos = pos;
+    private NodeRef newNodeAt(Vector3i pos, BlockGraph targetGraph, BlockUri blockUri) {
+        NodeRef baseNode = targetGraph.createTerminusNode(blockUri);
+        baseNode.asTerminus().worldPos = pos;
 
         EntityRef entity = blockEntityRegistry.getBlockEntityAt(pos);
         GraphNodeComponent component = new GraphNodeComponent();
 
         component.graphUri = targetGraph.getUri();
-        component.nodeId = baseNode.nodeId;
+        component.nodeId = baseNode.getNodeId();
 
         entity.addComponent(component);
         return baseNode;
@@ -308,7 +320,7 @@ public class BlockGraphConstructor extends BaseComponentSystem {
                 continue; // We don't want to investigate neighbours of this pos
             } else {
                 // Is not a member of any graph so we can add it to ours
-                TerminusNode baseNode = newNodeAt(currentPos, targetGraph, block.getURI());
+                NodeRef baseNode = newNodeAt(currentPos, targetGraph, block.getURI());
                 linkToNeighbours(baseNode, currentPos, targetGraph);
             }
 
@@ -356,12 +368,12 @@ public class BlockGraphConstructor extends BaseComponentSystem {
     }
 
 
-    private void linkToNeighbours(GraphNode node, Vector3i pos, BlockGraph graph) {
+    private void linkToNeighbours(NodeRef node, Vector3i pos, BlockGraph graph) {
         Vector3i[] positions = getSurroundingPos(pos);
         for (Vector3i position : positions) {
-            GraphNode neighbour = getNodeAt(position, graph);
+            NodeRef neighbour = getNodeAt(position, graph);
             if (neighbour != null) {
-                GraphNode linkedNode = tryForceLink(node, pos, neighbour, position);
+                NodeRef linkedNode = tryForceLink(node, pos, neighbour, position);
                 if (linkedNode == null) {
                     // The link failed, so just skip the position
                 } else {
@@ -385,48 +397,52 @@ public class BlockGraphConstructor extends BaseComponentSystem {
      * @param node The node to upgrade
      * @return True if we can upgrade. False otherwise
      */
-    private boolean canUpgrade(GraphNode node) {
+    private boolean canUpgrade(NodeRef node) {
         return node.getNodeType() != NodeType.JUNCTION;
     }
 
-    private GraphNode upgradeNode(GraphNode node) {
-        BlockGraph graph = graphManager.getGraphInstance(node.graphUri);
+    private NodeRef upgradeNode(NodeRef node) {
+        BlockGraph graph = graphManager.getGraphInstance(node.getGraphUri());
         switch (node.getNodeType()) {
             case TERMINUS:
-                EdgeNode edgeNode = graph.createEdgeNode(node.definitionId);
-
                 /* Record the connection, and then remove the node from the graph */
-                GraphNode otherNode = ((TerminusNode) node).connectionNode;
-                Side otherSide = ((TerminusNode) node).connectionSide;
-                graph.removeNode(node);
+                NodeRef otherNode = node.asTerminus().connectionNode;
+                Side otherSide = node.asTerminus().connectionSide;
+
+                graph.replaceNode(node, NodeType.EDGE);
 
                 /* Reform the connection */
-                tryBiLink(edgeNode, otherNode, otherSide);
+                if (otherNode != null) {
+                    tryBiLink(node, otherNode, otherSide);
+                }
 
-                node.nodeId = edgeNode.nodeId; // Update the ref to point to the new node
-                return edgeNode;
+                return node;
             case EDGE:
-                JunctionNode junctionNode = graph.createJunctionNode(node.definitionId);
+
+
 
                 /* Record the connection, and then remove the node from the graph */
                 //TODO: May have a problem. This will potentially fail if edges are allowed to be larger than 1.
                 //TODO: Can fix by adding a second check in `canUpgrade` or by splitting up all edges into 1 size chunks
                 //TODO: Revisit when we merge existing graphs together
-                GraphNode frontNode = ((EdgeNode) node).frontNode;
-                Side frontSide = ((EdgeNode) node).frontSide;
-                GraphNode backNode = ((EdgeNode) node).backNode;
-                Side backSide = ((EdgeNode) node).backSide;
+                NodeRef frontNode = node.asEdge().frontNode;
+                Side frontSide = node.asEdge().frontSide;
+                NodeRef backNode = node.asEdge().backNode;
+                Side backSide = node.asEdge().backSide;
 
-                graph.removeNode(node);
+                graph.replaceNode(node, NodeType.JUNCTION);
 
-                tryBiLink(junctionNode, frontNode, frontSide);
-                tryBiLink(junctionNode, backNode, backSide);
+                if (frontNode != null) {
+                    tryBiLink(node, frontNode, frontSide);
+                }
+                if (backNode != null) {
+                    tryBiLink(node, backNode, backSide);
+                }
 
-                node.nodeId = junctionNode.nodeId; // Update the ref to point to the new node
-                return junctionNode;
+                return node;
             case JUNCTION:
                 // We can't upgrade this one
-                return null;
+                throw new IllegalStateException("Can't upgrade a junction");
             default:
                 throw new IllegalStateException("Unexpected value: " + node.getNodeType());
         }
@@ -442,18 +458,18 @@ public class BlockGraphConstructor extends BaseComponentSystem {
      * @param otherPos  The position of the node to link to
      * @return The linked node (may not be the same ref). Null if failed
      */
-    private GraphNode tryForceLink(GraphNode thisNode, Vector3i thisPos, GraphNode otherNode, Vector3i otherPos) {
+    private NodeRef tryForceLink(NodeRef thisNode, Vector3i thisPos, NodeRef otherNode, Vector3i otherPos) {
         Side thisToOther = getSideFrom(thisPos, otherPos);
 
         if ((doesNodeHaveSpace(thisNode, thisToOther) || canUpgrade(thisNode))
                 && (doesNodeHaveSpace(otherNode, thisToOther.reverse()) || canUpgrade(otherNode))) {
             /* Upgrade the nodes we need to upgrade */
             if (!doesNodeHaveSpace(thisNode, thisToOther)) {
-                thisNode = upgradeNode(thisNode);
+                upgradeNode(thisNode);
                 updateWorldRef(thisNode, thisPos);
             }
             if (!doesNodeHaveSpace(otherNode, thisToOther.reverse())) {
-                otherNode = upgradeNode(otherNode);
+                upgradeNode(otherNode);
                 updateWorldRef(otherNode, otherPos);
             }
             /* Do the link with the upgraded nodes */
@@ -464,25 +480,25 @@ public class BlockGraphConstructor extends BaseComponentSystem {
         return null; // We can't link them as one doesn't have space or something failed
     }
 
-    private void updateWorldRef(GraphNode node, Vector3i pos) {
+    private void updateWorldRef(NodeRef node, Vector3i pos) {
         EntityRef entity = blockEntityRegistry.getExistingEntityAt(pos);
         GraphNodeComponent component = entity.getComponent(GraphNodeComponent.class);
 
-        component.graphUri = node.graphUri;
-        component.nodeId = node.nodeId;
+        component.graphUri = node.getGraphUri();
+        component.nodeId = node.getNodeId();
 
         entity.saveComponent(component);
 
         switch (node.getNodeType()) {
             case TERMINUS:
-                ((TerminusNode) node).worldPos = pos;
+                node.asTerminus().worldPos = pos;
                 break;
             case EDGE:
-                ((EdgeNode) node).backPos = pos;
-                ((EdgeNode) node).frontPos = pos;
+                node.asEdge().backPos = pos;
+                node.asEdge().frontPos = pos;
                 break;
             case JUNCTION:
-                ((JunctionNode) node).worldPos = pos;
+                node.asJunction().worldPos = pos;
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + node.getNodeType());
@@ -496,7 +512,7 @@ public class BlockGraphConstructor extends BaseComponentSystem {
      * @param graph    The graph the node would belong to
      * @return The node if it exists, null otherwise
      */
-    private GraphNode getNodeAt(Vector3i position, BlockGraph graph) {
+    private NodeRef getNodeAt(Vector3i position, BlockGraph graph) {
         EntityRef blockEntity = blockEntityRegistry.getExistingEntityAt(position);
         GraphNodeComponent component = blockEntity.getComponent(GraphNodeComponent.class);
         if (component != null && component.graphUri == graph.getUri()) {

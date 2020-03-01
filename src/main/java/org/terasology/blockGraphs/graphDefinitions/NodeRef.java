@@ -37,6 +37,9 @@ public class NodeRef {
 
     @SuppressWarnings("unchecked")
     public <T extends GraphNode> T getNode() {
+        if (!isValid()) {
+            throw new InvalidNodeRefError();
+        }
         return (T) node;
     }
 
@@ -101,11 +104,11 @@ public class NodeRef {
         node.unlinkAll();
     }
 
-    public void unlinkNode(NodeRef node) {
+    public void unlinkNode(NodeRef other) {
         if (!isValid()) {
             throw new InvalidNodeRefError();
         }
-        node.unlinkNode(node);
+        node.unlinkNode(other);
     }
 
     public Collection<NodeRef> getConnections() {
@@ -115,10 +118,10 @@ public class NodeRef {
         return node.getConnections();
     }
 
-    public Side getSideForNode(NodeRef node) {
+    public Side getSideForNode(NodeRef other) {
         if (!isValid()) {
             throw new InvalidNodeRefError();
         }
-        return node.getSideForNode(node);
+        return node.getSideForNode(other);
     }
 }
