@@ -15,6 +15,7 @@
  */
 package org.terasology.blockGraphs;
 
+import org.terasology.blockGraphs.graphDefinitions.NodeRef;
 import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeSide;
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
@@ -35,7 +36,7 @@ public class TestRemoveDefinition extends TestUpwardsDefinition {
     }
 
     @Override
-    public void dataEnterNode(GraphNode node, EntityRef data, Side entry) {
+    public void dataEnterNode(NodeRef node, EntityRef data, Side entry) {
         super.dataEnterNode(node, data, entry);
         if (data.hasComponent(EjectOnTriggerComponent.class)) {
             shouldEject = data.getComponent(EjectOnTriggerComponent.class)
@@ -44,7 +45,7 @@ public class TestRemoveDefinition extends TestUpwardsDefinition {
     }
 
     @Override
-    public boolean processTerminus(TerminusNode node, EntityRef data) {
+    public boolean processTerminus(NodeRef node, EntityRef data) {
         if (shouldEject) {
             return true;
         }
@@ -52,7 +53,7 @@ public class TestRemoveDefinition extends TestUpwardsDefinition {
     }
 
     @Override
-    public EdgeSide processEdge(EdgeNode node, EntityRef data, EdgeSide entry) {
+    public EdgeSide processEdge(NodeRef node, EntityRef data, EdgeSide entry) {
         if (shouldEject) {
             return null;
         }
@@ -60,7 +61,7 @@ public class TestRemoveDefinition extends TestUpwardsDefinition {
     }
 
     @Override
-    public Side processJunction(JunctionNode node, EntityRef data, Side entry) {
+    public Side processJunction(NodeRef node, EntityRef data, Side entry) {
         if (shouldEject) {
             return null;
         }

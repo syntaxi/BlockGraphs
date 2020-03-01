@@ -16,6 +16,7 @@
 package org.terasology.blockGraphs;
 
 import org.terasology.blockGraphs.dataMovement.GraphPositionComponent;
+import org.terasology.blockGraphs.graphDefinitions.NodeRef;
 import org.terasology.blockGraphs.graphDefinitions.nodeDefinitions.NodeDefinition;
 import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeSide;
@@ -27,18 +28,18 @@ import org.terasology.math.Side;
 public abstract class TestDefinition implements NodeDefinition {
 
     @Override
-    public void dataEnterNode(GraphNode node, EntityRef data, Side entry) {
+    public void dataEnterNode(NodeRef node, EntityRef data, Side entry) {
         NodePathTestComponent component = data.getComponent(NodePathTestComponent.class);
         component.nodePath.add(data.getComponent(GraphPositionComponent.class).currentNode);
     }
 
     @Override
-    public EdgeSide processEdge(EdgeNode node, EntityRef data, EdgeSide entry) {
+    public EdgeSide processEdge(NodeRef node, EntityRef data, EdgeSide entry) {
         return entry.getOpposite(); //Move through
     }
 
     @Override
-    public boolean processTerminus(TerminusNode node, EntityRef data) {
+    public boolean processTerminus(NodeRef node, EntityRef data) {
         GraphPositionComponent graphComponent = data.getComponent(GraphPositionComponent.class);
         if (graphComponent.isEntering) {
             return false; //bounce back

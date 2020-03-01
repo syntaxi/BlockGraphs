@@ -15,6 +15,7 @@
  */
 package org.terasology.blockGraphs;
 
+import org.terasology.blockGraphs.graphDefinitions.NodeRef;
 import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
@@ -32,8 +33,8 @@ public class TestRandomDefinition extends TestDefinition {
     }
 
     @Override
-    public Side processJunction(JunctionNode node, EntityRef data, Side entry) {
-        return new FastRandom().nextItem(new ArrayList<>(node.nodes.keySet()));
+    public Side processJunction(NodeRef node, EntityRef data, Side entry) {
+        return new FastRandom().nextItem(new ArrayList<>(node.asJunction().nodes.keySet()));
     }
 
 }

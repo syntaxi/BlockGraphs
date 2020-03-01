@@ -15,6 +15,7 @@
  */
 package org.terasology.blockGraphs;
 
+import org.terasology.blockGraphs.graphDefinitions.NodeRef;
 import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
 import org.terasology.entitySystem.Component;
 
@@ -22,5 +23,5 @@ import java.util.function.Predicate;
 
 public class EjectOnTriggerComponent implements Component {
 
-    public Predicate<GraphNode> trigger;
+    public Predicate<NodeRef> trigger;
 }

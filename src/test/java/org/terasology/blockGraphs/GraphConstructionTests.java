@@ -21,10 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
 import org.terasology.blockGraphs.graphDefinitions.GraphUri;
-import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
-import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
-import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
-import org.terasology.blockGraphs.graphDefinitions.nodes.TerminusNode;
+import org.terasology.blockGraphs.graphDefinitions.NodeRef;
+import org.terasology.blockGraphs.graphDefinitions.nodes.NodeType;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;
 
@@ -37,7 +35,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 public class GraphConstructionTests extends WorldBasedTests {
     private static final Logger logger = LoggerFactory.getLogger(GraphConstructionTests.class);
@@ -82,7 +79,7 @@ public class GraphConstructionTests extends WorldBasedTests {
         BlockGraph graph = graphManager.getGraphInstance(graphUri);
 
         assertEquals(graphUri.toString(), "BlockGraphs:TestGraph.1"); // Graph was made with right URI
-        assertEquals(graph.getNodeCount(), points.size()); // Has the right number of nodes
+        assertEquals(points.size(), graph.getNodeCount()); // Has the right number of nodes
         for (Vector3i point : points) {
             assertNotNull(getNodeAt(point, graph)); // Each position has a relevant node
         }
@@ -141,7 +138,7 @@ public class GraphConstructionTests extends WorldBasedTests {
 
         assertEquals(graphUri.toString(), "BlockGraphs:TestGraph.1"); // Graph was made with right URI
         assertEquals(graph.getNodeCount(), points.size()); // Has the right number of nodes
-        assertTrue(getNodeAt(points.get(3), graph) instanceof JunctionNode); //The node was made a junction properly
+        assertSame(getNodeAt(points.get(3), graph).getNodeType(), NodeType.JUNCTION); //The node was made a junction properly
         for (Vector3i point : points) {
             assertNotNull(getNodeAt(point, graph)); // Each position has a relevant node
         }
@@ -179,7 +176,7 @@ public class GraphConstructionTests extends WorldBasedTests {
 
         assertEquals(graphUri.toString(), "BlockGraphs:TestGraph.1"); // Graph was made with right URI
         assertEquals(graph.getNodeCount(), points.size()); // Has the right number of nodes
-        assertTrue(getNodeAt(points.get(3), graph) instanceof JunctionNode); //The node was made a junction properly
+        assertSame(getNodeAt(points.get(3), graph).getNodeType(), NodeType.JUNCTION); //The node was made a junction properly
         for (Vector3i point : points) {
             assertNotNull(getNodeAt(point, graph)); // Each position has a relevant node
         }
@@ -213,26 +210,26 @@ public class GraphConstructionTests extends WorldBasedTests {
         BlockGraph graph = graphManager.getGraphInstance(graphUri);
 
         assertEquals(graphUri.toString(), "BlockGraphs:TestGraph.1"); // Graph was made with right URI
-        assertEquals(graph.getNodeCount(), points.size()); // Has the right number of nodes
+        assertEquals(points.size(), graph.getNodeCount()); // Has the right number of nodes
 
         graphConstructor.crunchGraph(graph);
 
-        assertEquals(graph.getNodeCount(), 3); // Has the right number of nodes
+        assertEquals(3, graph.getNodeCount()); // Has the right number of nodes
         assertThat(getNodeAt(points.get(3), graph), is(getNodeAt(points.get(6), graph))); // All blocks point to the same edge
 
-        TerminusNode front = (TerminusNode) getNodeAt(points.get(0), graph);
-        TerminusNode back = (TerminusNode) getNodeAt(points.get(9), graph);
-        EdgeNode middle = (EdgeNode) getNodeAt(points.get(4), graph);
+        NodeRef front = getNodeAt(points.get(0), graph);
+        NodeRef back = getNodeAt(points.get(9), graph);
+        NodeRef middle = getNodeAt(points.get(4), graph);
         assertNotNull(front);
         assertNotNull(back);
         assertNotNull(middle);
-        assertThat(front.connectionNode, is(middle));
-        assertThat(back.connectionNode, is(middle));
-        assertThat(middle.frontNode, is(front));
-        assertThat(middle.backNode, is(back));
+        assertThat(front.asTerminus().connectionNode, is(middle));
+        assertThat(back.asTerminus().connectionNode, is(middle));
+        assertThat(middle.asEdge().frontNode, is(front));
+        assertThat(middle.asEdge().backNode, is(back));
 
         /* Assert the edge has the right points */
-        assertWorldPoints(middle.worldPositions, points, 1, points.size() - 1);
+        assertWorldPoints(middle.asEdge().worldPositions, points, 1, points.size() - 1);
     }
 
 
@@ -268,30 +265,30 @@ public class GraphConstructionTests extends WorldBasedTests {
         assertEquals(graph.getNodeCount(), 6); // Has the right number of nodes
         assertNotSame(getNodeAt(points.get(3), graph), getNodeAt(points.get(6), graph)); // Blocks either side of the junction are not the same
 
-        TerminusNode front = (TerminusNode) getNodeAt(points.get(0), graph);
-        EdgeNode neck = (EdgeNode) getNodeAt(points.get(2), graph);
-        JunctionNode center = (JunctionNode) getNodeAt(points.get(5), graph);
-        EdgeNode tail = (EdgeNode) getNodeAt(points.get(7), graph);
-        TerminusNode back = (TerminusNode) getNodeAt(points.get(9), graph);
-        for (GraphNode node : new GraphNode[]{front, neck, center, tail, back}) {
+        NodeRef front = getNodeAt(points.get(0), graph);
+        NodeRef neck = getNodeAt(points.get(2), graph);
+        NodeRef center = getNodeAt(points.get(5), graph);
+        NodeRef tail = getNodeAt(points.get(7), graph);
+        NodeRef back = getNodeAt(points.get(9), graph);
+        for (NodeRef node : new NodeRef[]{front, neck, center, tail, back}) {
             assertNotNull(node);
         }
 
         /* Test that the connections were correct */
-        assertThat(front.connectionNode, is(neck));
-        assertThat(neck.frontNode, is(front));
+        assertThat(front.asTerminus().connectionNode, is(neck));
+        assertThat(neck.asEdge().frontNode, is(front));
 
-        assertThat(neck.backNode, is(center));
-        assertThat(center.getNodeForSide(Side.BOTTOM), is(neck));
+        assertThat(neck.asEdge().backNode, is(center));
+        assertThat(center.asJunction().getNodeForSide(Side.BOTTOM), is(neck));
 
-        assertThat(center.getNodeForSide(Side.TOP), is(tail));
-        assertThat(tail.frontNode, is(center));
+        assertThat(center.asJunction().getNodeForSide(Side.TOP), is(tail));
+        assertThat(tail.asEdge().frontNode, is(center));
 
-        assertThat(tail.backNode, is(back));
-        assertThat(back.connectionNode, is(tail));
+        assertThat(tail.asEdge().backNode, is(back));
+        assertThat(back.asTerminus().connectionNode, is(tail));
 
-        assertWorldPoints(neck.worldPositions, points, 1, 5);
-        assertWorldPoints(tail.worldPositions, points, 6, 9);
+        assertWorldPoints(neck.asEdge().worldPositions, points, 1, 5);
+        assertWorldPoints(tail.asEdge().worldPositions, points, 6, 9);
     }
 
     /**
@@ -325,26 +322,26 @@ public class GraphConstructionTests extends WorldBasedTests {
         assertEquals(graph.getNodeCount(), 4); // Has the right number of nodes
         assertNotSame(getNodeAt(points.get(1), graph), getNodeAt(points.get(5), graph)); // Two different edges
 
-        TerminusNode front = (TerminusNode) getNodeAt(points.get(0), graph);
-        EdgeNode neck = (EdgeNode) getNodeAt(points.get(1), graph);
-        EdgeNode tail = (EdgeNode) getNodeAt(points.get(5), graph);
-        TerminusNode back = (TerminusNode) getNodeAt(points.get(6), graph);
-        for (GraphNode node : new GraphNode[]{front, neck, tail, back}) {
+        NodeRef front = getNodeAt(points.get(0), graph);
+        NodeRef neck = getNodeAt(points.get(1), graph);
+        NodeRef tail = getNodeAt(points.get(5), graph);
+        NodeRef back = getNodeAt(points.get(6), graph);
+        for (NodeRef node : new NodeRef[]{front, neck, tail, back}) {
             assertNotNull(node);
         }
 
         /* Test that the connections were correct */
-        assertThat(front.connectionNode, is(neck));
-        assertThat(neck.frontNode, is(front));
+        assertThat(front.asTerminus().connectionNode, is(neck));
+        assertThat(neck.asEdge().frontNode, is(front));
 
-        assertThat(neck.backNode, is(tail));
-        assertThat(tail.frontNode, is(neck));
+        assertThat(neck.asEdge().backNode, is(tail));
+        assertThat(tail.asEdge().frontNode, is(neck));
 
-        assertThat(tail.backNode, is(back));
-        assertThat(back.connectionNode, is(tail));
+        assertThat(tail.asEdge().backNode, is(back));
+        assertThat(back.asTerminus().connectionNode, is(tail));
 
-        assertWorldPoints(neck.worldPositions, points, 1, 4);
-        assertWorldPoints(tail.worldPositions, points, 4, 6);
+        assertWorldPoints(neck.asEdge().worldPositions, points, 1, 4);
+        assertWorldPoints(tail.asEdge().worldPositions, points, 4, 6);
     }
 
     /**
@@ -372,14 +369,15 @@ public class GraphConstructionTests extends WorldBasedTests {
 
         assertEquals(graphUri.toString(), "BlockGraphs:TestGraph.1"); // Graph was made with right URI
         assertEquals(graph.getNodeCount(), points.size()); // Has the right number of nodes
-        GraphNode front = getNodeAt(points.get(0), graph);
-        GraphNode back = getNodeAt(points.get(7), graph);
-        assertTrue(front instanceof EdgeNode);
-        assertTrue(back instanceof EdgeNode);
-        assertThat(back, anyOf(is(((EdgeNode) front).frontNode), is(((EdgeNode) front).backNode)));
-        assertThat(front, anyOf(is(((EdgeNode) back).frontNode), is(((EdgeNode) back).backNode)));
+        NodeRef front = getNodeAt(points.get(0), graph);
+        NodeRef back = getNodeAt(points.get(7), graph);
+        assertSame(front.getNodeType(), NodeType.EDGE);
+        assertSame(back.getNodeType(), NodeType.EDGE);
+        assertThat(back, anyOf(is(front.asEdge().frontNode), is(front.asEdge().backNode)));
+        assertThat(front, anyOf(is(back.asEdge().frontNode), is(back.asEdge().backNode)));
 
         graphConstructor.crunchGraph(graph);
+
         assertEquals(graph.getNodeCount(), 1); // Has the right number of nodes
         assertSame(getNodeAt(points.get(0), graph), getNodeAt(points.get(7), graph)); // Two different edges
     }

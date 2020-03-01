@@ -22,10 +22,7 @@ import org.terasology.blockGraphs.dataMovement.GraphPositionComponent;
 import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
 import org.terasology.blockGraphs.graphDefinitions.GraphNodeComponent;
 import org.terasology.blockGraphs.graphDefinitions.GraphUri;
-import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
-import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
-import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
-import org.terasology.blockGraphs.graphDefinitions.nodes.TerminusNode;
+import org.terasology.blockGraphs.graphDefinitions.NodeRef;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.geom.Vector3i;
 import org.terasology.world.BlockEntityRegistry;
@@ -102,7 +99,7 @@ public class WorldBasedTests extends GraphTesting {
      * @param graph    The graph the node would belong to
      * @return The node if it exists, null otherwise
      */
-    GraphNode getNodeAt(Vector3i position, BlockGraph graph) {
+    NodeRef getNodeAt(Vector3i position, BlockGraph graph) {
         EntityRef blockEntity = blockEntityRegistry.getExistingEntityAt(position);
         GraphNodeComponent component = blockEntity.getComponent(GraphNodeComponent.class);
         if (component != null && component.graphUri == graph.getUri()) {
@@ -135,7 +132,7 @@ public class WorldBasedTests extends GraphTesting {
         List<Integer> expectedPath = Arrays.stream(path)
                 .mapToObj(points::get)
                 .map(pos -> getNodeAt(pos, graph))
-                .map(node -> node.nodeId)
+                .map(NodeRef::getNodeId)
                 .collect(Collectors.toList());
 
         assertThat(dataPath, is(expectedPath)); // Check the paths are the same
@@ -160,7 +157,7 @@ public class WorldBasedTests extends GraphTesting {
      * @param sequence The order the points should connect in
      */
     void assertNodePath(BlockGraph graph, List<Vector3i> points, int... sequence) {
-        Map<Integer, GraphNode> nodeMap = new HashMap<>();
+        Map<Integer, NodeRef> nodeMap = new HashMap<>();
         for (int i : sequence) {
             nodeMap.put(i, getNodeAt(points.get(i), graph));
         }
@@ -193,7 +190,7 @@ public class WorldBasedTests extends GraphTesting {
      * @param nodeA The first node to check
      * @param nodeB The second node to check
      */
-    void checkBiConnection(GraphNode nodeA, GraphNode nodeB) {
+    void checkBiConnection(NodeRef nodeA, NodeRef nodeB) {
         checkConnection(nodeA, nodeB);
         checkConnection(nodeB, nodeA);
     }
@@ -205,16 +202,16 @@ public class WorldBasedTests extends GraphTesting {
      * @param nodeA The node the connection should "leave from"
      * @param nodeB The node the connection should "enter"
      */
-    void checkConnection(GraphNode nodeA, GraphNode nodeB) {
+    void checkConnection(NodeRef nodeA, NodeRef nodeB) {
         switch (nodeA.getNodeType()) {
             case TERMINUS:
-                assertThat(nodeB, is(((TerminusNode) nodeA).connectionNode));
+                assertThat(nodeB, is(nodeA.asTerminus().connectionNode));
                 break;
             case EDGE:
-                assertThat(nodeB, CoreMatchers.anyOf(is(((EdgeNode) nodeA).frontNode), is(((EdgeNode) nodeA).backNode)));
+                assertThat(nodeB, CoreMatchers.anyOf(is(nodeA.asEdge().frontNode), is(nodeA.asEdge().backNode)));
                 break;
             case JUNCTION:
-                assertThat(((JunctionNode) nodeA).nodes.values(), hasItem(nodeB));
+                assertThat(nodeA.asJunction().nodes.values(), hasItem(nodeB));
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + nodeA.getNodeType());
