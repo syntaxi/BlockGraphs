@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 MovingBlocks
+ * Copyright 2020 MovingBlocks
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.blockGraphs.graphDefinitions.nodeDefinitions;
+package org.terasology.blockGraphs.testDefinitions;
 
 import org.terasology.blockGraphs.graphDefinitions.NodeRef;
-import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeSide;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
 import org.terasology.utilities.random.FastRandom;
@@ -24,33 +23,17 @@ import org.terasology.world.block.BlockUri;
 
 import java.util.ArrayList;
 
-/**
- * The most basic implementation of a node.
- * Simply randomly routes data in junctions and straight through otherwise
- */
-public class SimpleGraphNode implements NodeDefinition {
+public class TestRandomDefinition extends TestDefinition {
+    public static final BlockUri BLOCK_URI = new BlockUri("BlockGraphs:TestRandomBlock");
 
+    @Override
     public BlockUri getBlockForNode() {
-        return null;
+        return BLOCK_URI;
     }
 
+    @Override
     public Side processJunction(NodeRef node, EntityRef data, Side entry) {
-        /* Return a random side out of the available options */
         return new FastRandom().nextItem(new ArrayList<>(node.asJunction().nodes.keySet()));
     }
 
-    public EdgeSide processEdge(NodeRef node, EntityRef data, EdgeSide entry) {
-        if (entry != null) {
-            /* Choose opposite, ie move through */
-            return entry.getOpposite();
-        } else {
-            /* Choose random */
-            return new FastRandom().nextBoolean() ? EdgeSide.BACK : EdgeSide.FRONT;
-        }
-    }
-
-    public boolean processTerminus(NodeRef node, EntityRef data) {
-        /* Always pop the data out */
-        return true;
-    }
 }

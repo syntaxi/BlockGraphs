@@ -19,17 +19,10 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
-import org.terasology.blockGraphs.graphDefinitions.GraphNodeComponent;
-import org.terasology.blockGraphs.graphDefinitions.GraphType;
-import org.terasology.blockGraphs.graphDefinitions.GraphUri;
-import org.terasology.blockGraphs.graphDefinitions.NodeRef;
+import org.terasology.blockGraphs.graphDefinitions.*;
 import org.terasology.blockGraphs.graphDefinitions.nodeDefinitions.NodeDefinition;
 import org.terasology.blockGraphs.graphDefinitions.nodes.EdgeNode;
-import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
-import org.terasology.blockGraphs.graphDefinitions.nodes.JunctionNode;
 import org.terasology.blockGraphs.graphDefinitions.nodes.NodeType;
-import org.terasology.blockGraphs.graphDefinitions.nodes.TerminusNode;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.entitySystem.systems.BaseComponentSystem;
 import org.terasology.entitySystem.systems.RegisterSystem;
@@ -46,11 +39,7 @@ import org.terasology.world.block.BlockUri;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.terasology.blockGraphs.NodeLinkHelper.doUniLink;
-import static org.terasology.blockGraphs.NodeLinkHelper.doesNodeHaveSpace;
-import static org.terasology.blockGraphs.NodeLinkHelper.getSideFrom;
-import static org.terasology.blockGraphs.NodeLinkHelper.getSurroundingPos;
-import static org.terasology.blockGraphs.NodeLinkHelper.tryBiLink;
+import static org.terasology.blockGraphs.NodeLinkHelper.*;
 
 @RegisterSystem
 @Share(BlockGraphConstructor.class)
@@ -109,10 +98,10 @@ public class BlockGraphConstructor extends BaseComponentSystem {
 
         /* Record the connection points _before_ we remove all the nodes as that will invalidate the edge refs */
         rawNode.frontPos = frontEdge.getConnectionPos();
-        rawNode.backPos = frontEdge.getConnectionPos();
+        rawNode.backPos = backEdge.getConnectionPos();
 
         /* Remove all the old edges
-        * This goes first so that the end of the 'OTHER' node is empty*/
+         * This goes first so that the end of the 'OTHER' node is empty*/
         edges.forEach(graph::removeNode);
 
         if (frontEdge.edgeEnd == backEdge.edgeEnd) {

@@ -69,10 +69,10 @@ public class GraphMergeTests extends WorldBasedTests {
 
     /**
      * Given two sets of points, construct graphs and try merging them.
-     * The merging will happen at the first point of each graph
+     * The merging will happen at the first point of each graph.
      *
-     * @param points1 The first set of points
-     * @param points2 The second set of points
+     * @param points1 The first set of points.
+     * @param points2 The second set of points.
      */
     private void quickMergeTest(List<Vector3i> points1, List<Vector3i> points2) {
         BlockGraph graph1 = constructAndCrunchPoints(points1);

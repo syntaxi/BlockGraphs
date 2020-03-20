@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 MovingBlocks
+ * Copyright 2020 MovingBlocks
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.blockGraphs.dataMovement;
+package org.terasology.blockGraphs.testDefinitions;
 
 import org.terasology.blockGraphs.graphDefinitions.NodeRef;
-import org.terasology.entitySystem.event.Event;
+import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
+import org.terasology.entitySystem.Component;
 
-public class OnLeaveGraphEvent implements Event {
-    public NodeRef finalNode;
-    public boolean wasEjected = false;
+import java.util.function.Predicate;
+
+public class EjectOnTriggerComponent implements Component {
+
+    public Predicate<NodeRef> trigger;
 }

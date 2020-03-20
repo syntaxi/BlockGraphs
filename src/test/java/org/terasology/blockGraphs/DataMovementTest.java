@@ -24,7 +24,7 @@ import org.terasology.blockGraphs.dataMovement.OnLeaveGraphEvent;
 import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
 import org.terasology.blockGraphs.graphDefinitions.GraphType;
 import org.terasology.blockGraphs.graphDefinitions.NodeRef;
-import org.terasology.blockGraphs.graphDefinitions.nodes.GraphNode;
+import org.terasology.blockGraphs.testDefinitions.*;
 import org.terasology.engine.SimpleUri;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
@@ -271,7 +271,7 @@ public class DataMovementTest extends GraphTesting {
         AtomicBoolean wasRemoved = new AtomicBoolean(false);
         AtomicReference<NodeRef> removedFrom = new AtomicReference<>(null);
         AtomicBoolean wasEjected = new AtomicBoolean();
-        TestEventReceiver receiver = new TestEventReceiver<>(getHostContext(), OnLeaveGraphEvent.class, (event, entity) -> {
+        new TestEventReceiver<>(getHostContext(), OnLeaveGraphEvent.class, (event, entity) -> {
             wasRemoved.set(true);
             wasEjected.set(event.wasEjected);
             removedFrom.set(event.finalNode);

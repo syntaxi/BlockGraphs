@@ -23,6 +23,7 @@ import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
 import org.terasology.blockGraphs.graphDefinitions.GraphNodeComponent;
 import org.terasology.blockGraphs.graphDefinitions.GraphUri;
 import org.terasology.blockGraphs.graphDefinitions.NodeRef;
+import org.terasology.blockGraphs.testDefinitions.NodePathTestComponent;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.geom.Vector3i;
 import org.terasology.world.BlockEntityRegistry;

@@ -27,6 +27,7 @@ import org.terasology.math.geom.Vector3i;
 import org.terasology.world.BlockEntityRegistry;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public final class NodeLinkHelper {
@@ -261,12 +262,23 @@ public final class NodeLinkHelper {
     }
 
 
+    /**
+     * Splits up an edge at the given position. A new junction node is made at the split location.
+     * This is to allow other nodes to be joined to the graph at that position.
+     * <p>
+     * This may result in one, two or three nodes depending on the length of the edge,
+     * and where the split was respectively.
+     *
+     * @param pos The position to split the node up at
+     * @return The new node at the site of the split and the edge nodes either side of it.
+     */
     public static List<NodeRef> splitEdgeAt(NodePosition pos) {
         EdgeNode rawNode = pos.node.getNode();
 
         // Firstly handle edge being 1 block
+        // If it is only one block then we just need to convert it fully into a Junction node
         if (rawNode.worldPositions.size() == 1) {
-            return convertEdgeNode(pos, pos.node);
+            return Collections.singletonList(convertEdgeNode(pos));
         } else {
 
             // Make the new junction node
@@ -274,7 +286,7 @@ public final class NodeLinkHelper {
             NodeRef junctionNode = graph.createJunctionNode(pos.node.getDefinitionId());
             junctionNode.asJunction().worldPos = pos.pos;
 
-            if (pos.pos.equals(rawNode.frontPos)) { // Front end
+            if (pos.pos.equals(rawNode.frontPos)) {// Front end
                 return shrinkAndLinkFront(pos.node, junctionNode);
             } else if (pos.pos.equals(rawNode.backPos)) { // Back end
                 return shrinkAndLinkBack(pos.node, junctionNode);
@@ -285,22 +297,32 @@ public final class NodeLinkHelper {
     }
 
 
-    private static List<NodeRef> convertEdgeNode(NodePosition pos, NodeRef edgeNode) {
+    /**
+     * Converts an edge node into a junction node.
+     * <p>
+     * This does NOT care about the world locations of the node.
+     * It simply ensures that the connections on either side of the node are maintained.
+     *
+     * @param pos The position of the node to convert
+     * @return The new node.
+     * TODO: Doesn't this violate the point of NodeRef?
+     */
+    private static NodeRef convertEdgeNode(NodePosition pos) {
         BlockGraph graph = pos.graph;
-        NodeRef newNode = graph.createJunctionNode(edgeNode.getDefinitionId());
+        NodeRef newNode = graph.createJunctionNode(pos.node.getDefinitionId());
 
-        EdgeNode rawNode = edgeNode.getNode();
+        EdgeNode rawNode = pos.node.getNode();
         NodeRef backNode = rawNode.backNode;
         Side backSide = rawNode.backSide;
         NodeRef frontNode = rawNode.frontNode;
         Side frontSide = rawNode.frontSide;
 
-        graph.removeNode(edgeNode);
+        graph.removeNode(pos.node);
 
         tryBiLink(newNode, backNode, backSide);
         tryBiLink(newNode, frontNode, frontSide);
 
-        return Lists.newArrayList(newNode);
+        return newNode;
     }
 
     private static List<NodeRef> splitInMiddle(NodePosition pos, NodeRef edgeNode, BlockGraph graph, NodeRef junctionNode) {

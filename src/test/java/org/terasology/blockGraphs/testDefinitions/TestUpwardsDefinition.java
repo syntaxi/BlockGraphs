@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 MovingBlocks
+ * Copyright 2020 MovingBlocks
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.blockGraphs.dataMovement;
+package org.terasology.blockGraphs.testDefinitions;
 
 import org.terasology.blockGraphs.graphDefinitions.NodeRef;
-import org.terasology.entitySystem.event.Event;
+import org.terasology.entitySystem.entity.EntityRef;
+import org.terasology.math.Side;
+import org.terasology.world.block.BlockUri;
 
-public class OnLeaveGraphEvent implements Event {
-    public NodeRef finalNode;
-    public boolean wasEjected = false;
+public class TestUpwardsDefinition extends TestDefinition {
+    public static final BlockUri BLOCK_URI = new BlockUri("BlockGraphs:TestUpwardsBlock");
+
+    @Override
+    public BlockUri getBlockForNode() {
+        return BLOCK_URI;
+    }
+
+    @Override
+    public Side processJunction(NodeRef node, EntityRef data, Side entry) {
+        return Side.TOP;
+    }
 }
