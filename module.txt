@@ -5,7 +5,7 @@
     "displayName" : "BlockGraphs",
     "description" : "",
     "dependencies" : [
-        {"id": "ModuleTestingEnvironment","minVersion": "0.1.0"}
+        {"id": "ModuleTestingEnvironment","minVersion": "0.2.0"}
     ],
     "serverSideOnly" : false
 }
