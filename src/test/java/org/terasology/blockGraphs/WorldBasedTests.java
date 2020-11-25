@@ -26,6 +26,7 @@ import org.terasology.blockGraphs.graphDefinitions.NodeRef;
 import org.terasology.blockGraphs.testDefinitions.NodePathTestComponent;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.geom.Vector3i;
+import org.terasology.registry.In;
 import org.terasology.world.BlockEntityRegistry;
 import org.terasology.world.WorldProvider;
 import org.terasology.world.block.Block;
@@ -46,22 +47,20 @@ import static org.junit.Assert.assertThat;
 
 public class WorldBasedTests extends GraphTesting {
 
-    private WorldProvider worldProvider;
-    private BlockEntityRegistry blockEntityRegistry;
-
     Block randomBlock;
     Block leftBlock;
     Block upwardsBlock;
 
+    @In
+    private WorldProvider worldProvider;
+    @In
+    private BlockEntityRegistry blockEntityRegistry;
+    @In
+    private BlockManager blockManager;
 
-    @Before
+
     public void initialize() {
         super.initialize();
-
-        worldProvider = getHostContext().get(WorldProvider.class);
-        blockEntityRegistry = getHostContext().get(BlockEntityRegistry.class);
-
-        BlockManager blockManager = getHostContext().get(BlockManager.class);
 
         randomBlock = blockManager.getBlock("BlockGraphs:TestRandomBlock");
         randomBlock.setKeepActive(true);
@@ -126,7 +125,7 @@ public class WorldBasedTests extends GraphTesting {
     void testPath(List<Vector3i> points, BlockGraph graph, int[] path) {
         EntityRef testData = buildData(new NodePathTestComponent());
         movementSystem.insertData(getNodeAt(points.get(path[0]), graph), testData);
-        runUntil(() -> testData.getComponent(NodePathTestComponent.class).isFinished);
+        helper.runUntil(() -> testData.getComponent(NodePathTestComponent.class).isFinished);
 
         /* Test the path travelled */
         List<Integer> dataPath = testData.getComponent(NodePathTestComponent.class).nodePath;
@@ -176,7 +175,7 @@ public class WorldBasedTests extends GraphTesting {
      * @return The new block graph covering those points
      */
     BlockGraph constructAndCrunchPoints(List<Vector3i> points) {
-        forceAndWaitForGeneration(Vector3i.zero());
+        helper.forceAndWaitForGeneration(Vector3i.zero());
         setAllTo(upwardsBlock, points);
 
         GraphUri graphUri = graphConstructor.constructEntireGraph(points.get(0));

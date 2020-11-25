@@ -15,8 +15,8 @@
  */
 package org.terasology.blockGraphs;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
@@ -25,6 +25,9 @@ import org.terasology.blockGraphs.graphDefinitions.NodeRef;
 import org.terasology.blockGraphs.graphDefinitions.nodes.NodeType;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;
+import org.terasology.moduletestingenvironment.ModuleTestingHelper;
+import org.terasology.moduletestingenvironment.extension.Dependencies;
+import org.terasology.registry.In;
 
 import java.util.List;
 
@@ -36,10 +39,15 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 
+@Dependencies({"engine", "BlockGraphs"})
 public class GraphConstructionTests extends WorldBasedTests {
     private static final Logger logger = LoggerFactory.getLogger(GraphConstructionTests.class);
 
-    @Before
+
+    @In
+    protected ModuleTestingHelper localHelper;
+
+    @BeforeEach
     public void initialize() {
         super.initialize();
 
@@ -51,7 +59,7 @@ public class GraphConstructionTests extends WorldBasedTests {
     @Test
     public void testSinglePoint() {
         List<Vector3i> points = pointsToVectors(new int[][]{{0, 0, 0}});
-        forceAndWaitForGeneration(Vector3i.zero());
+        localHelper.forceAndWaitForGeneration(Vector3i.zero());
         setAllTo(upwardsBlock, points);
 
         GraphUri graphUri = graphConstructor.constructEntireGraph(points.get(0));
@@ -72,7 +80,7 @@ public class GraphConstructionTests extends WorldBasedTests {
                 {0, 2, 0},
                 {0, 3, 0}
         });
-        forceAndWaitForGeneration(Vector3i.zero());
+        helper.forceAndWaitForGeneration(Vector3i.zero());
         setAllTo(upwardsBlock, points);
 
         GraphUri graphUri = graphConstructor.constructEntireGraph(points.get(0));
@@ -101,7 +109,7 @@ public class GraphConstructionTests extends WorldBasedTests {
                 {2, 2, 0},
                 {2, 3, 0}
         });
-        forceAndWaitForGeneration(Vector3i.zero());
+        helper.forceAndWaitForGeneration(Vector3i.zero());
         setAllTo(upwardsBlock, points);
 
         GraphUri graphUri = graphConstructor.constructEntireGraph(points.get(0));
@@ -130,7 +138,7 @@ public class GraphConstructionTests extends WorldBasedTests {
                 {1, 3, 0},
                 {2, 2, 0}
         });
-        forceAndWaitForGeneration(Vector3i.zero());
+        helper.forceAndWaitForGeneration(Vector3i.zero());
         setAllTo(upwardsBlock, points);
 
         GraphUri graphUri = graphConstructor.constructEntireGraph(points.get(0));
@@ -138,7 +146,8 @@ public class GraphConstructionTests extends WorldBasedTests {
 
         assertEquals(graphUri.toString(), "BlockGraphs:TestGraph.1"); // Graph was made with right URI
         assertEquals(graph.getNodeCount(), points.size()); // Has the right number of nodes
-        assertSame(getNodeAt(points.get(3), graph).getNodeType(), NodeType.JUNCTION); //The node was made a junction properly
+        assertSame(getNodeAt(points.get(3), graph).getNodeType(), NodeType.JUNCTION); //The node was made a junction
+        // properly
         for (Vector3i point : points) {
             assertNotNull(getNodeAt(point, graph)); // Each position has a relevant node
         }
@@ -148,13 +157,7 @@ public class GraphConstructionTests extends WorldBasedTests {
     }
 
     /**
-     * A path with multiple graph types
-     * x x x x x
-     * x x U x x
-     * x U L U x
-     * x x x L x
-     * x x x L x
-     * x x x x x
+     * A path with multiple graph types x x x x x x x U x x x U L U x x x x L x x x x L x x x x x x
      */
     @Test
     public void testMultipleType() {
@@ -167,7 +170,7 @@ public class GraphConstructionTests extends WorldBasedTests {
                 {4, 8, 5}  // UP
         });
 
-        forceAndWaitForGeneration(Vector3i.zero());
+        helper.forceAndWaitForGeneration(Vector3i.zero());
         setAllTo(upwardsBlock, points);
         setAllTo(leftBlock, pointsToVectors(new int[][]{{5, 5, 5}, {4, 7, 5}, {5, 6, 5}}));
 
@@ -176,7 +179,8 @@ public class GraphConstructionTests extends WorldBasedTests {
 
         assertEquals(graphUri.toString(), "BlockGraphs:TestGraph.1"); // Graph was made with right URI
         assertEquals(graph.getNodeCount(), points.size()); // Has the right number of nodes
-        assertSame(getNodeAt(points.get(3), graph).getNodeType(), NodeType.JUNCTION); //The node was made a junction properly
+        assertSame(getNodeAt(points.get(3), graph).getNodeType(), NodeType.JUNCTION); //The node was made a junction
+        // properly
         for (Vector3i point : points) {
             assertNotNull(getNodeAt(point, graph)); // Each position has a relevant node
         }
@@ -203,7 +207,7 @@ public class GraphConstructionTests extends WorldBasedTests {
                 {0, 9, 0}  // Terminus
         });
 
-        forceAndWaitForGeneration(Vector3i.zero());
+        helper.forceAndWaitForGeneration(Vector3i.zero());
         setAllTo(upwardsBlock, points);
 
         GraphUri graphUri = graphConstructor.constructEntireGraph(points.get(0));
@@ -215,7 +219,8 @@ public class GraphConstructionTests extends WorldBasedTests {
         graphConstructor.crunchGraph(graph);
 
         assertEquals(3, graph.getNodeCount()); // Has the right number of nodes
-        assertThat(getNodeAt(points.get(3), graph), is(getNodeAt(points.get(6), graph))); // All blocks point to the same edge
+        assertThat(getNodeAt(points.get(3), graph), is(getNodeAt(points.get(6), graph))); // All blocks point to the
+        // same edge
 
         NodeRef front = getNodeAt(points.get(0), graph);
         NodeRef back = getNodeAt(points.get(9), graph);
@@ -252,7 +257,7 @@ public class GraphConstructionTests extends WorldBasedTests {
                 {1, 5, 0}  // Terminus
         });
 
-        forceAndWaitForGeneration(Vector3i.zero());
+        helper.forceAndWaitForGeneration(Vector3i.zero());
         setAllTo(upwardsBlock, points);
 
         GraphUri graphUri = graphConstructor.constructEntireGraph(points.get(0));
@@ -263,7 +268,8 @@ public class GraphConstructionTests extends WorldBasedTests {
 
         graphConstructor.crunchGraph(graph);
         assertEquals(graph.getNodeCount(), 6); // Has the right number of nodes
-        assertNotSame(getNodeAt(points.get(3), graph), getNodeAt(points.get(6), graph)); // Blocks either side of the junction are not the same
+        assertNotSame(getNodeAt(points.get(3), graph), getNodeAt(points.get(6), graph)); // Blocks either side of the
+        // junction are not the same
 
         NodeRef front = getNodeAt(points.get(0), graph);
         NodeRef neck = getNodeAt(points.get(2), graph);
@@ -307,7 +313,7 @@ public class GraphConstructionTests extends WorldBasedTests {
         });
 
 
-        forceAndWaitForGeneration(Vector3i.zero());
+        helper.forceAndWaitForGeneration(Vector3i.zero());
         setAllTo(upwardsBlock, points);
         setAllTo(randomBlock, pointsToVectors(new int[][]{{0, 0, 0}, {0, 6, 0}}));
         setAllTo(leftBlock, pointsToVectors(new int[][]{{0, 4, 0}, {0, 5, 0}}));
@@ -361,7 +367,7 @@ public class GraphConstructionTests extends WorldBasedTests {
         });
 
 
-        forceAndWaitForGeneration(Vector3i.zero());
+        helper.forceAndWaitForGeneration(Vector3i.zero());
         setAllTo(upwardsBlock, points);
 
         GraphUri graphUri = graphConstructor.constructEntireGraph(points.get(0));

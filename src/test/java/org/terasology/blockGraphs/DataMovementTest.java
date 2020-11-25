@@ -1,22 +1,9 @@
-/*
- * Copyright 2018 MovingBlocks
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright 2020 The Terasology Foundation
+// SPDX-License-Identifier: Apache-2.0
 package org.terasology.blockGraphs;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.blockGraphs.dataMovement.GraphPositionComponent;
@@ -24,11 +11,16 @@ import org.terasology.blockGraphs.dataMovement.OnLeaveGraphEvent;
 import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
 import org.terasology.blockGraphs.graphDefinitions.GraphType;
 import org.terasology.blockGraphs.graphDefinitions.NodeRef;
-import org.terasology.blockGraphs.testDefinitions.*;
+import org.terasology.blockGraphs.testDefinitions.EjectOnTriggerComponent;
+import org.terasology.blockGraphs.testDefinitions.NodePathTestComponent;
+import org.terasology.blockGraphs.testDefinitions.TestRandomDefinition;
+import org.terasology.blockGraphs.testDefinitions.TestRemoveDefinition;
+import org.terasology.blockGraphs.testDefinitions.TestUpwardsDefinition;
 import org.terasology.engine.SimpleUri;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
 import org.terasology.moduletestingenvironment.TestEventReceiver;
+import org.terasology.moduletestingenvironment.extension.Dependencies;
 import org.terasology.world.block.BlockUri;
 
 import java.util.Arrays;
@@ -44,12 +36,14 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+
+@Dependencies({"engine", "BlockGraphs"})
 public class DataMovementTest extends GraphTesting {
     private static final Logger logger = LoggerFactory.getLogger(DataMovementTest.class);
 
     private BlockGraph graph;
 
-    @Before
+    @BeforeEach
     public void initialize() {
         super.initialize();
 
@@ -70,7 +64,8 @@ public class DataMovementTest extends GraphTesting {
     }
 
     /**
-     * Tests a simple graph case where the data moves sequentially through a series of nodes. With the last being a terminus
+     * Tests a simple graph case where the data moves sequentially through a series of nodes. With the last being a
+     * terminus
      * <code>1 -> 2 -> 3 -> 4</code>
      */
     @Test
@@ -93,7 +88,7 @@ public class DataMovementTest extends GraphTesting {
 
         /* Insert & let the data travel through the system */
         movementSystem.insertData(terminusNodes[0], testData);
-        runUntil(() -> testData.getComponent(NodePathTestComponent.class).isFinished);
+        helper.runUntil(() -> testData.getComponent(NodePathTestComponent.class).isFinished);
 
         /* Test the path travelled */
         List<Integer> dataPath = testData.getComponent(NodePathTestComponent.class).nodePath;
@@ -108,8 +103,8 @@ public class DataMovementTest extends GraphTesting {
     }
 
     /**
-     * Tests a simple graph case where the data moves sequentially through a series of nodes.
-     * There is one interior node, an edge
+     * Tests a simple graph case where the data moves sequentially through a series of nodes. There is one interior
+     * node, an edge
      * <code>1 -> [..2..] -> 3</code>
      */
     @Test
@@ -128,7 +123,7 @@ public class DataMovementTest extends GraphTesting {
 
         /* Insert & let the data travel through the system */
         movementSystem.insertData(nodes[0], testData);
-        runUntil(() -> testData.getComponent(NodePathTestComponent.class).isFinished);
+        helper.runUntil(() -> testData.getComponent(NodePathTestComponent.class).isFinished);
 
         /* Test the path travelled */
         List<Integer> dataPath = testData.getComponent(NodePathTestComponent.class).nodePath;
@@ -141,8 +136,7 @@ public class DataMovementTest extends GraphTesting {
     }
 
     /**
-     * Tests a graph with a single choice
-     * Consists of three junctions, three edges and one
+     * Tests a graph with a single choice Consists of three junctions, three edges and one
      *
      * <code>               ↱ [..5..] → 2 </code>
      * <code> 1 → [..4..] → 7             </code>
@@ -178,7 +172,7 @@ public class DataMovementTest extends GraphTesting {
 
         /* Insert & let the data travel through the system */
         movementSystem.insertData(terminusNodes[0], testData);
-        runUntil(() -> testData.getComponent(NodePathTestComponent.class).isFinished);
+        helper.runUntil(() -> testData.getComponent(NodePathTestComponent.class).isFinished);
 
 
 
@@ -213,8 +207,7 @@ public class DataMovementTest extends GraphTesting {
     }
 
     /**
-     * Tests a graph made of two different types of nodes
-     * Still a simple graph of an edge, junction and two terminus
+     * Tests a graph made of two different types of nodes Still a simple graph of an edge, junction and two terminus
      * <p>
      * 1A -> 2B -> 3A
      */
@@ -234,7 +227,7 @@ public class DataMovementTest extends GraphTesting {
 
         /* Insert & let the data travel through the system */
         movementSystem.insertData(terminusNodes[0], testData);
-        runUntil(() -> testData.getComponent(NodePathTestComponent.class).isFinished);
+        helper.runUntil(() -> testData.getComponent(NodePathTestComponent.class).isFinished);
 
         /* Test the path travelled */
         List<Integer> dataPath = testData.getComponent(NodePathTestComponent.class).nodePath;
@@ -271,7 +264,7 @@ public class DataMovementTest extends GraphTesting {
         AtomicBoolean wasRemoved = new AtomicBoolean(false);
         AtomicReference<NodeRef> removedFrom = new AtomicReference<>(null);
         AtomicBoolean wasEjected = new AtomicBoolean();
-        new TestEventReceiver<>(getHostContext(), OnLeaveGraphEvent.class, (event, entity) -> {
+        new TestEventReceiver<>(helper.getHostContext(), OnLeaveGraphEvent.class, (event, entity) -> {
             wasRemoved.set(true);
             wasEjected.set(event.wasEjected);
             removedFrom.set(event.finalNode);
@@ -281,7 +274,7 @@ public class DataMovementTest extends GraphTesting {
         /* Insert & let the data travel through the system */
         component.trigger = graphNode -> graphNode == removeNode;
         movementSystem.insertData(terminusNodes[0], testData);
-        runUntil(wasRemoved::get);
+        helper.runUntil(wasRemoved::get);
 
 
         /* Test the path travelled */

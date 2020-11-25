@@ -15,7 +15,7 @@
  */
 package org.terasology.blockGraphs;
 
-import com.google.common.collect.Sets;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.terasology.blockGraphs.dataMovement.GraphMovementSystem;
 import org.terasology.blockGraphs.graphDefinitions.GraphType;
 import org.terasology.blockGraphs.testDefinitions.TestLeftDefinition;
@@ -28,31 +28,36 @@ import org.terasology.entitySystem.entity.EntityBuilder;
 import org.terasology.entitySystem.entity.EntityManager;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.entitySystem.entity.internal.EngineEntityManager;
-import org.terasology.moduletestingenvironment.ModuleTestingEnvironment;
+import org.terasology.moduletestingenvironment.MTEExtension;
+import org.terasology.moduletestingenvironment.ModuleTestingHelper;
 import org.terasology.network.NetworkSystem;
 import org.terasology.network.internal.NetworkSystemImpl;
+import org.terasology.registry.In;
 
-import java.util.Set;
 
-public class GraphTesting extends ModuleTestingEnvironment {
-
+@ExtendWith(MTEExtension.class)
+public class GraphTesting {
+    @In
     protected GraphMovementSystem movementSystem;
+    @In
     protected BlockGraphManager graphManager;
+    @In
     protected BlockGraphConstructor graphConstructor;
+    @In
+    protected ModuleTestingHelper helper;
 
-    @Override
-    public Set<String> getDependencies() {
-        return Sets.newHashSet("BlockGraphs");
-    }
+    @In
+    private NetworkSystem networkSystem;
+    @In
+    private EngineEntityManager engineEntityManager;
+    @In
+    private EntityManager entityManager;
 
     public void initialize() {
 
         /* Stops NPEs when adding a component to an entity (and possibly other related methods) */
-        ((EngineEntityManager) getHostContext().get(EntityManager.class)).unsubscribe((NetworkSystemImpl) getHostContext().get(NetworkSystem.class));
+        engineEntityManager.unsubscribe((NetworkSystemImpl) networkSystem);
 
-        movementSystem = getHostContext().get(GraphMovementSystem.class);
-        graphManager = getHostContext().get(BlockGraphManager.class);
-        graphConstructor = getHostContext().get(BlockGraphConstructor.class);
 
         GraphType graphType = new GraphType(new SimpleUri("BlockGraphs:TestGraph"));
         graphType.addNodeType(new TestUpwardsDefinition());
@@ -70,7 +75,7 @@ public class GraphTesting extends ModuleTestingEnvironment {
      * @return A data packet to be passed around the graphs
      */
     protected EntityRef buildData(Component... components) {
-        EntityBuilder builder = getHostContext().get(EntityManager.class).newBuilder();
+        EntityBuilder builder = entityManager.newBuilder();
         builder.setPersistent(true);
         for (Component component : components) {
             builder.addComponent(component);

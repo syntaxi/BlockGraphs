@@ -19,6 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.terasology.blockGraphs.graphDefinitions.BlockGraph;
 import org.terasology.math.geom.Vector3i;
+import org.terasology.registry.In;
 import org.terasology.world.BlockEntityRegistry;
 
 import java.util.Collections;
@@ -29,17 +30,10 @@ import java.util.List;
  */
 public class GraphMergeTests extends WorldBasedTests {
 
+    @In
     private GraphChangeManager changeManager;
+    @In
     private BlockEntityRegistry entityRegistry;
-
-    @Before
-    public void initialize() {
-        super.initialize();
-
-        changeManager = getHostContext().get(GraphChangeManager.class);
-        entityRegistry = getHostContext().get(BlockEntityRegistry.class);
-    }
-
 
     /**
      * Test merging two single terminus graphs
