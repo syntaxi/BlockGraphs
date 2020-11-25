@@ -28,6 +28,7 @@ import org.terasology.entitySystem.entity.EntityBuilder;
 import org.terasology.entitySystem.entity.EntityManager;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.entitySystem.entity.internal.EngineEntityManager;
+import org.terasology.moduletestingenvironment.IsolatedMTEExtension;
 import org.terasology.moduletestingenvironment.MTEExtension;
 import org.terasology.moduletestingenvironment.ModuleTestingHelper;
 import org.terasology.network.NetworkSystem;
@@ -35,7 +36,7 @@ import org.terasology.network.internal.NetworkSystemImpl;
 import org.terasology.registry.In;
 
 
-@ExtendWith(MTEExtension.class)
+@ExtendWith(IsolatedMTEExtension.class)
 public class GraphTesting {
     @In
     protected GraphMovementSystem movementSystem;
