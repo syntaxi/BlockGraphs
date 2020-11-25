@@ -49,6 +49,7 @@ public class GraphConstructionTests extends WorldBasedTests {
 
     @BeforeEach
     public void initialize() {
+        graphManager.clear();
         super.initialize();
 
     }
@@ -322,7 +323,7 @@ public class GraphConstructionTests extends WorldBasedTests {
         BlockGraph graph = graphManager.getGraphInstance(graphUri);
 
         assertEquals(graphUri.toString(), "BlockGraphs:TestGraph.1"); // Graph was made with right URI
-        assertEquals(graph.getNodeCount(), points.size()); // Has the right number of nodes
+        assertEquals(points.size(), graph.getNodeCount()); // Has the right number of nodes
 
         graphConstructor.crunchGraph(graph);
         assertEquals(graph.getNodeCount(), 4); // Has the right number of nodes

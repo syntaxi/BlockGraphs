@@ -40,6 +40,13 @@ public class BlockGraphManager extends BaseComponentSystem {
     private Map<GraphUri, BlockGraph> graphRegistry = new HashMap<>();
     private Map<BlockUri, SimpleUri> blockToGraph = new HashMap<>();
 
+    public void clear() {
+        nextGraphId = 1L;
+        graphTypes = new HashMap<>();
+        graphRegistry = new HashMap<>();
+        blockToGraph = new HashMap<>();
+    }
+
     /**
      * Gets the graph type associated with the specific URI
      *
